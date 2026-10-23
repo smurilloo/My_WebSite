@@ -370,7 +370,21 @@
     updateTicker();
     if (visible) refreshCandles();
   }
-  ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'].forEach(ev =>
-    addEventListener(ev, wake, { passive: true }));
+  // Only real user input counts: browsers fire synthetic pointermove events while the mouse
+  // is still (animations under the cursor), which would otherwise reset the timer forever.
+  let px = null, py = null, sy = scrollY;
+  addEventListener('pointermove', e => {
+    if (!e.isTrusted) return;
+    if (px !== null && Math.abs(e.clientX - px) + Math.abs(e.clientY - py) < 3) return;
+    px = e.clientX; py = e.clientY;
+    wake();
+  }, { passive: true });
+  addEventListener('scroll', () => {
+    if (Math.abs(scrollY - sy) < 2) return;
+    sy = scrollY;
+    wake();
+  }, { passive: true });
+  ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev =>
+    addEventListener(ev, e => { if (e.isTrusted) wake(); }, { passive: true }));
   setInterval(() => { if (!asleep && Date.now() - lastActivity >= IDLE_MS) sleep(); }, Math.min(15000, IDLE_MS / 2));
 })();
