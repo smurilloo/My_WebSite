@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Samuel Murillo — MLOps · Agentic AI · Trading Systems</title>
+  <meta name="description" content="Samuel Murillo Ospina — Senior MLOps Engineer. Algorithmic trading systems, AI agents, MLOps and Data Engineering on Azure and Databricks.">
+  <meta name="theme-color" content="#05060a">
+  <meta property="og:title" content="Samuel Murillo — MLOps · Agentic AI · Trading Systems">
+  <meta property="og:description" content="Algorithmic trading systems, AI agents, MLOps and Data Engineering on Azure and Databricks.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css?v=8">
+</head>
+<body class="is-loading">
+
+  <!-- Preloader -->
+  <div class="loader" id="loader" aria-hidden="true">
+    <div class="loader__count"><span id="loaderCount">000</span></div>
+    <div class="loader__bar"><span id="loaderBar"></span></div>
+    <div class="loader__label mono">INITIALIZING · SM/26</div>
+  </div>
+
+  <!-- WebGL background -->
+  <canvas id="gl" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- Custom cursor -->
+  <div class="cursor" id="cursor" aria-hidden="true"><span class="cursor__dot"></span><span class="cursor__label" id="cursorLabel"></span></div>
+
+  <!-- Header -->
+  <header class="header">
+    <a href="#top" class="logo" data-cursor="home" data-i18n-attr="aria-label:aria.home" aria-label="Inicio">
+      <span class="logo__mark">SM</span><span class="logo__text mono">samuel murillo</span>
+    </a>
+    <div class="header__right">
+      <button class="lang mono" id="langToggle" data-cursor="lang" data-i18n-attr="aria-label:aria.lang" aria-label="Cambiar idioma">ES / <b>EN</b></button>
+      <button class="burger" id="menuToggle" data-cursor="menu" data-i18n-attr="aria-label:aria.menu" aria-label="Menú" aria-expanded="false"><span></span><span></span></button>
+    </div>
+  </header>
+
+  <!-- Overlay menu -->
+  <nav class="menu" id="menu" aria-hidden="true">
+    <ul class="menu__list">
+      <li><a href="#services" data-i18n="nav.services">Servicios</a></li>
+      <li><a href="#trading" data-i18n="nav.trading">Trading</a></li>
+      <li><a href="#experience" data-i18n="nav.experience">Experiencia</a></li>
+      <li><a href="#stack" data-i18n="nav.stack">Stack</a></li>
+      <li><a href="#contact" data-i18n="nav.contact">Contacto</a></li>
+    </ul>
+    <div class="menu__foot mono">
+      <a href="mailto:smurilloo@unal.edu.co">smurilloo@unal.edu.co</a>
+      <a href="https://www.linkedin.com/in/samuel-murillo-ospina-97298111a" target="_blank" rel="noopener">LinkedIn ↗</a>
+      <a href="https://github.com/smurilloo" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </nav>
+
+  <!-- Side progress -->
+  <div class="progress mono" aria-hidden="true">
+    <span id="progressNum">00</span>
+    <div class="progress__track"><span id="progressBar"></span></div>
+    <span>05</span>
+  </div>
+
+  <main id="top">
+
+    <!-- HERO -->
+    <section class="hero" data-scene="0">
+      <p class="eyebrow mono reveal" data-i18n="hero.eyebrow">Senior MLOps Engineer · Medellín, Colombia · Remoto</p>
+      <h1 class="hero__title">
+        <span class="line"><span class="split" data-i18n="hero.l1">Construyo</span></span>
+        <span class="line"><span class="split outline" data-i18n="hero.l2">sistemas</span></span>
+        <span class="line"><span class="split" data-i18n="hero.l3">que piensan</span></span>
+        <span class="line"><span class="split" data-i18n="hero.l4">y operan</span></span>
+        <span class="line"><span class="split accent" data-i18n="hero.l5">como quieres.</span></span>
+      </h1>
+      <div class="hero__foot">
+        <p class="hero__lead reveal" data-i18n="hero.lead">Agentes de IA, trading algorítmico, MLOps e ingeniería de datos sobre Azure y Databricks, del prototipo a la producción, 24/7.</p>
+        <a href="#services" class="scroll-cue mono reveal" data-cursor="scroll"><span data-i18n="hero.scroll">Desliza para explorar</span><i></i></a>
+      </div>
+      <div class="ticker mono reveal" aria-hidden="true">
+        <span>BTC/USDT</span><b id="tickPrice">—</b><em id="tickDelta">—</em>
+      </div>
+    </section>
+
+    <!-- SERVICES -->
+    <section class="section services" id="services" data-scene="1">
+      <header class="section__head">
+        <span class="section__idx mono">01</span>
+        <h2 class="section__title"><span class="split" data-i18n="services.title">Servicios</span></h2>
+        <p class="section__intro reveal" data-i18n="services.intro">Lo que puedo construir para tu empresa o tu operación. Cada servicio está respaldado por proyectos reales en producción.</p>
+      </header>
+
+      <div class="cards">
+        <article class="card reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <div class="card__num mono">/01</div>
+          <h3 data-i18n="s1.t">Sistemas de trading algorítmico</h3>
+          <p data-i18n="s1.d">Diseño, backtesting y operación de bots en exchanges (Bitget, CCXT). Señales en múltiples temporalidades, gestión de riesgo, optimización en GPU con análisis walk-forward y despliegue 24/7 con alertas.</p>
+          <ul class="tags mono"><li>Python</li><li>CCXT</li><li>Numba/CUDA</li><li>systemd</li></ul>
+        </article>
+        <article class="card reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <div class="card__num mono">/02</div>
+          <h3 data-i18n="s2.t">Agentes de IA y LLMs</h3>
+          <p data-i18n="s2.d">Sistemas agénticos que ejecutan procesos de negocio: agentes con herramientas, RAG, Claude Code y OpenClaw, puentes a Telegram y operación autónoma supervisada.</p>
+          <ul class="tags mono"><li>Claude Code</li><li>OpenClaw</li><li>RAG</li><li>LLM Agents</li></ul>
+        </article>
+        <article class="card reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <div class="card__num mono">/03</div>
+          <h3 data-i18n="s3.t">MLOps y CI/CD</h3>
+          <p data-i18n="s3.d">Suites completas de CI/CD con Databricks Asset Bundles y GitHub Actions, reentrenamiento automático de modelos, monitoreo y arquitectura escalable.</p>
+          <ul class="tags mono"><li>DAB</li><li>GitHub Actions</li><li>MLflow</li><li>Docker</li></ul>
+        </article>
+        <article class="card reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <div class="card__num mono">/04</div>
+          <h3 data-i18n="s4.t">Ingeniería de datos en Azure + Databricks</h3>
+          <p data-i18n="s4.d">Productos de datos, pipelines ETL con PySpark, Data Vault, DataOps y arquitectura Lakehouse. Certificado como Databricks Data Engineer Associate y Azure Platform Architect.</p>
+          <ul class="tags mono"><li>PySpark</li><li>Delta Lake</li><li>Azure</li><li>SQL</li></ul>
+        </article>
+        <article class="card reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <div class="card__num mono">/05</div>
+          <h3 data-i18n="s5.t">Machine Learning aplicado</h3>
+          <p data-i18n="s5.d">Modelos de ML/DL para detección de fraude, clasificación, regresión y pronóstico del comportamiento de clientes, desde los datos crudos hasta una API en producción.</p>
+          <ul class="tags mono"><li>scikit-learn</li><li>Deep Learning</li><li>Forecasting</li><li data-i18n="tag.stats">Estadística</li></ul>
+        </article>
+        <article class="card reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <div class="card__num mono">/06</div>
+          <h3 data-i18n="s6.t">Infraestructura y microservicios</h3>
+          <p data-i18n="s6.d">Microservicios en contenedores, Kubernetes, GraphQL e infraestructura como código. Optimización de costos y soporte técnico para procesos críticos.</p>
+          <ul class="tags mono"><li>Kubernetes</li><li>GraphQL</li><li>IaC</li><li>Linux</li></ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- TRADING CASE -->
+    <section class="section trading" id="trading" data-scene="2">
+      <header class="section__head">
+        <span class="section__idx mono">02</span>
+        <h2 class="section__title"><span class="split" data-i18n="trading.title">Tradester</span></h2>
+        <p class="section__intro reveal" data-i18n="trading.intro">Caso de estudio: mi propio bot de trading para el futuro perpetuo BTC/USDT en Bitget, con tres estrategias operando 24/7 desde una Raspberry Pi y monitoreado por un agente de IA que avisa por Telegram ante cualquier error.</p>
+      </header>
+
+      <div class="trading__grid">
+        <div class="chart reveal" data-cursor="live">
+          <div class="chart__head mono"><span>BTCUSDT · PERP · 1H · BITGET</span><span class="live" id="chartLive"><i></i>LIVE</span></div>
+          <canvas id="candles"></canvas>
+        </div>
+
+        <div class="stats">
+          <div class="stat reveal"><b class="mono" data-count="392" data-dec="0">0</b><span data-i18n="st.trades">Operaciones en total (3 estrategias)</span></div>
+          <div class="stat reveal"><b class="mono" data-count="2.74" data-dec="2">0</b><span data-i18n="st.pf">Profit factor combinado</span></div>
+          <div class="stat reveal"><b class="mono" data-count="112.4" data-dec="1" data-prefix="+" data-suffix="%">0</b><span data-i18n="st.net">Retorno neto sobre la cuenta 2020→2026</span></div>
+          <div class="stat reveal"><b class="mono" data-count="52.0" data-dec="1" data-suffix="%">0</b><span data-i18n="st.win">Tasa de acierto global</span></div>
+        </div>
+      </div>
+
+      <div class="strats">
+        <div class="strat reveal">
+          <span class="strat__id mono">S1</span>
+          <h4 data-i18n="sx.s1">Giros en extremos</h4>
+          <b class="mono" data-count="125" data-dec="0">0</b><span class="strat__unit mono">trades</span>
+          <p class="strat__meta mono">52.8% <span data-i18n="sx.win">acierto</span> · PF 2.21 · +58.2 R</p>
+        </div>
+        <div class="strat reveal">
+          <span class="strat__id mono">S2</span>
+          <h4 data-i18n="sx.s2">Continuación de tendencia</h4>
+          <b class="mono" data-count="70" data-dec="0">0</b><span class="strat__unit mono">trades</span>
+          <p class="strat__meta mono">37.1% <span data-i18n="sx.win">acierto</span> · PF 5.25 · +110.8 R</p>
+        </div>
+        <div class="strat reveal">
+          <span class="strat__id mono">S4</span>
+          <h4 data-i18n="sx.s4">Rupturas con impulso</h4>
+          <b class="mono" data-count="197" data-dec="0">0</b><span class="strat__unit mono">trades</span>
+          <p class="strat__meta mono">56.9% <span data-i18n="sx.win">acierto</span> · PF 2.01 · +55.9 R</p>
+        </div>
+      </div>
+      <p class="backtest-date mono reveal"><span data-i18n="sx.last">Último backtest ejecutado:</span> <b>2026-10-22</b> · <span data-i18n="sx.period">Periodo: 2020-01-01 → 2026-10-22</span></p>
+
+      <div class="pipeline">
+        <div class="step reveal"><span class="mono">01</span><h4 data-i18n="p1.t">Datos</h4><p data-i18n="p1.d">Velas de 1D/4H/1H/15m/1m desde 2020 y el libro de órdenes en vivo, registrados en cada ciclo para hacer backtesting con datos reales.</p></div>
+        <div class="step reveal"><span class="mono">02</span><h4 data-i18n="p2.t">Tres estrategias</h4><p data-i18n="p2.d">Tres estrategias independientes en distintas temporalidades; solo se operan señales completamente confirmadas. Los criterios de entrada son confidenciales.</p></div>
+        <div class="step reveal"><span class="mono">03</span><h4 data-i18n="p3.t">Optimización GPU</h4><p data-i18n="p3.d">Motor Numba/CUDA en una RTX 4060: análisis walk-forward, bootstrapping, simulación Monte Carlo y pruebas de vecindad de parámetros.</p></div>
+        <div class="step reveal"><span class="mono">04</span><h4 data-i18n="p4.t">Riesgo</h4><p data-i18n="p4.d">Riesgo fijo por operación y protección dinámica de ganancias. Las reglas y los parámetros específicos son confidenciales.</p></div>
+        <div class="step reveal"><span class="mono">05</span><h4 data-i18n="p5.t">Operación</h4><p data-i18n="p5.d">Servicios systemd, un health guard, alertas por Telegram y un agente de Claude Code como monitor que revisa el sistema y notifica cualquier error o problema.</p></div>
+      </div>
+      <p class="disclaimer mono reveal" data-i18n="trading.disc">* Resultados de backtest del 2020-01-01 al 2026-10-22, netos de comisiones, funding y deslizamiento, con un riesgo de 0,5% de la cuenta por operación. Los resultados pasados no garantizan rendimientos futuros.</p>
+    </section>
+
+    <!-- EXPERIENCE -->
+    <section class="section experience" id="experience" data-scene="3">
+      <header class="section__head">
+        <span class="section__idx mono">03</span>
+        <h2 class="section__title"><span class="split" data-i18n="exp.title">Trayectoria</span></h2>
+      </header>
+      <ol class="timeline">
+        <li class="job reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <span class="job__date mono">2025 — 2026</span>
+          <div><h3>Sun Valley Investments</h3><p class="job__role mono">Senior MLOps Engineer</p>
+          <p data-i18n="j1">Sistemas de trading con agentes LLM y soporte MLOps general. Construí toda la suite CI/CD con Databricks Asset Bundles y GitHub Actions, automaticé el reentrenamiento de modelos, diseñé sistemas escalables, optimicé la infraestructura y desarrollé procesos de negocio impulsados por agentes.</p></div>
+        </li>
+        <li class="job reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <span class="job__date mono">2024 — 2025</span>
+          <div><h3>Bluetab America</h3><p class="job__role mono">Senior Data Engineer · AI Practice Leader</p>
+          <p data-i18n="j3">Productos de datos con agentes de IA, LLMs y RAG; despliegue de modelos de ML/DL y liderazgo de los planes de formación en IA de Bluetab. Databricks + Azure.</p></div>
+        </li>
+        <li class="job reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <span class="job__date mono">2021 — 2024</span>
+          <div><h3>TUYA S.A.</h3><p class="job__role mono">Data &amp; Automation Analyst</p>
+          <p data-i18n="j4">Modelos y procesos de datos con Kubernetes, Azure y Databricks; ML para detección de fraude, clasificación y pronóstico del comportamiento de clientes; automatización de marketing.</p></div>
+        </li>
+        <li class="job reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <span class="job__date mono">2023 — 2024</span>
+          <div><h3 data-i18n="edu.school">Universidad Nacional de Colombia</h3><p class="job__role mono" data-i18n="edu.ms.role">Magíster en Analítica</p>
+          <p data-i18n="edu.ms">Estudios de posgrado en analítica de datos, estadística y machine learning · Medellín, Colombia.</p></div>
+        </li>
+        <li class="job reveal" data-cursor="ver" data-i18n-attr="data-cursor:cursor.view">
+          <span class="job__date mono">2015 — 2020</span>
+          <div><h3 data-i18n="edu.school">Universidad Nacional de Colombia</h3><p class="job__role mono" data-i18n="edu.bs.role">Pregrado en Ingeniería Administrativa</p>
+          <p data-i18n="edu.bs">Título de pregrado · Medellín, Colombia.</p></div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- STACK -->
+    <section class="section stack" id="stack" data-scene="4">
+      <header class="section__head">
+        <span class="section__idx mono">04</span>
+        <h2 class="section__title"><span class="split" data-i18n="stack.title">Stack</span></h2>
+      </header>
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee__row"><span>Python · PySpark · Databricks · Azure · Docker · Kubernetes · GraphQL · MLflow · GitHub Actions · </span><span>Python · PySpark · Databricks · Azure · Docker · Kubernetes · GraphQL · MLflow · GitHub Actions · </span></div>
+        <div class="marquee__row marquee__row--rev outline"><span>Claude Code · OpenClaw · LLM Agents · RAG · Numba · CUDA · CCXT · SQL · ETL · DataOps · </span><span>Claude Code · OpenClaw · LLM Agents · RAG · Numba · CUDA · CCXT · SQL · ETL · DataOps · </span></div>
+      </div>
+      <div class="badges">
+        <div class="badge reveal"><span class="mono">CERT</span>Databricks Data Engineer Associate</div>
+        <div class="badge reveal"><span class="mono">CERT</span>Databricks Azure Platform Architect</div>
+        <div class="badge reveal"><span class="mono">CERT</span>Databricks Generative AI Fundamentals</div>
+        <div class="badge reveal"><span class="mono">CERT</span>Data Vault Modelling</div>
+        <div class="badge reveal"><span class="mono">LANG</span>English C1</div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="section contact" id="contact" data-scene="5">
+      <span class="section__idx mono">05</span>
+      <p class="eyebrow mono reveal" data-i18n="contact.eyebrow">¿Tienes un proyecto en mente?</p>
+      <a class="contact__big" href="mailto:smurilloo@unal.edu.co" data-cursor="email">
+        <span class="line"><span class="split" data-i18n="contact.l1">Hablemos</span></span>
+        <span class="line"><span class="split outline" data-i18n="contact.l2">de datos.</span></span>
+      </a>
+      <div class="contact__links mono">
+        <a class="magnetic" href="mailto:smurilloo@unal.edu.co" data-cursor="↗">smurilloo@unal.edu.co</a>
+        <a class="magnetic" href="https://www.linkedin.com/in/samuel-murillo-ospina-97298111a" target="_blank" rel="noopener" data-cursor="↗">LinkedIn</a>
+        <a class="magnetic" href="https://github.com/smurilloo" target="_blank" rel="noopener" data-cursor="↗">GitHub</a>
+        <a class="magnetic" href="https://wa.me/573505058437" target="_blank" rel="noopener" data-cursor="↗">WhatsApp</a>
+      </div>
+      <footer class="footer mono">
+        <span>© <span id="year"></span> Samuel Murillo Ospina</span>
+        <span id="clock">—</span>
+        <a href="#top" data-cursor="top" data-i18n="footer.top">Volver arriba ↑</a>
+      </footer>
+    </section>
+  </main>
+
+  <!-- Inactivity suspension -->
+  <div class="sleep" id="sleep" role="status" aria-live="polite" aria-hidden="true">
+    <div class="sleep__box">
+      <span class="sleep__dot" aria-hidden="true"></span>
+      <p class="sleep__title" data-i18n="sleep.title">Entrando en modo de suspensión por inactividad</p>
+      <p class="sleep__hint mono" data-i18n="sleep.hint">Mueve el mouse, toca la pantalla o presiona una tecla para continuar</p>
+    </div>
+  </div>
+
+  <!-- Email client picker -->
+  <div class="mailpick" id="mailpick" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="mailpickTitle">
+    <div class="mailpick__box">
+      <p class="mailpick__title mono" id="mailpickTitle"><span data-i18n="mail.title">Escribir a</span> <b>smurilloo@unal.edu.co</b></p>
+      <a class="mailpick__opt" target="_blank" rel="noopener" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=smurilloo@unal.edu.co">Gmail <i>↗</i></a>
+      <a class="mailpick__opt" target="_blank" rel="noopener" href="https://outlook.live.com/mail/0/deeplink/compose?to=smurilloo@unal.edu.co">Outlook <i>↗</i></a>
+      <a class="mailpick__opt" target="_blank" rel="noopener" href="https://compose.mail.yahoo.com/?to=smurilloo@unal.edu.co">Yahoo Mail <i>↗</i></a>
+      <a class="mailpick__opt" data-mail-native href="mailto:smurilloo@unal.edu.co"><span data-i18n="mail.default">Aplicación de correo predeterminada</span> <i>↗</i></a>
+      <button class="mailpick__opt" type="button" id="mailCopy"><span data-i18n="mail.copy">Copiar dirección</span> <i>⧉</i></button>
+      <button class="mailpick__close mono" type="button" id="mailClose" data-i18n="mail.close">Cerrar</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/scene.js?v=8"></script>
+  <script src="js/i18n.js?v=8"></script>
+  <script src="js/main.js?v=8"></script>
+</body>
+</html>

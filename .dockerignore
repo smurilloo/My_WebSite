@@ -1,0 +1,6 @@
+keys.json
+*.pdf
+.git
+.gitignore
+README.md
+docker-compose.yml

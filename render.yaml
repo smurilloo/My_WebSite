@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: my-website
+    runtime: static
+    branch: main
+    autoDeploy: true
+    buildCommand: echo "static site, no build step"
+    staticPublishPath: ./site
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.bitget.com https://api.binance.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+      - path: /*
+        name: Permissions-Policy
+        value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+      - path: /*
+        name: Cross-Origin-Opener-Policy
+        value: same-origin
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains
+      # Revalidate assets on every load so a new deploy is never served stale
+      - path: /*.js
+        name: Cache-Control
+        value: no-cache
+      - path: /*.css
+        name: Cache-Control
+        value: no-cache
+      - path: /*.svg
+        name: Cache-Control
+        value: no-cache

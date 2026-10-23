@@ -1,0 +1,8 @@
+services:
+  web:
+    build: .
+    image: smurilloo/my-website:latest
+    container_name: my-website
+    ports:
+      - "${PORT:-8088}:8080"
+    restart: unless-stopped
