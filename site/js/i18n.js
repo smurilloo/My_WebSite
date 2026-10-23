@@ -63,6 +63,8 @@ window.I18N_EN = {
   'j1': 'Trading systems with LLM agents and general MLOps support. I built the entire CI/CD suite with Databricks Asset Bundles and GitHub Actions, automated model retraining, designed scalable systems, optimized infrastructure and developed agent-powered business processes.',
   'j3': "Data products with AI agents, LLMs and RAG; ML/DL model deployment and leadership of Bluetab's AI training programs. Databricks + Azure.",
   'j4': 'Data models and processes with Kubernetes, Azure and Databricks; ML for fraud detection, classification and customer-behavior forecasting; marketing automation.',
+  'j5.role': 'Finance and Management Engineer',
+  'j5': 'Tracking of key operational indicators, financial and operational reporting, statistical data processing, SQL queries on database servers, data visualizations, general administrative support, continuous process improvement and financial model updates. Rionegro, Antioquia.',
   'edu.school': 'National University of Colombia',
   'edu.ms.role': "Master's Degree in Analytics",
   'edu.ms': 'Graduate studies in data analytics, statistics and machine learning · Medellín, Colombia.',
