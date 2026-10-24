@@ -210,6 +210,25 @@
   const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', second: '2-digit' });
   setInterval(() => { if (!idle()) clockEl.textContent = `MEDELLÍN ${fmt.format(new Date())} GMT-5`; }, 1000);
 
+  // ---------- Visit counter (stored at abacus.jasoncameron.dev; one hit per browser session, shown past 1000) ----------
+  (async () => {
+    const COUNTER = 'https://abacus.jasoncameron.dev';
+    const KEY = 'smurilloo-mywebsite/visits';
+    let counted = false;
+    try { counted = sessionStorage.getItem('visitCounted') === '1'; } catch (e) {}
+    try {
+      const r = await fetch(`${COUNTER}/${counted ? 'get' : 'hit'}/${KEY}`, { cache: 'no-store' });
+      const { value } = await r.json();
+      if (!counted) {
+        try { sessionStorage.setItem('visitCounted', '1'); } catch (e) {}
+      }
+      if (value > 1000) {
+        $('#visitsN').textContent = value.toLocaleString('en-US');
+        $('#visits').hidden = false;
+      }
+    } catch (e) {}
+  })();
+
   // ---------- BTC ticker (public endpoints, graceful fallback) ----------
   const tickPrice = $('#tickPrice'), tickDelta = $('#tickDelta');
   async function ticker() {

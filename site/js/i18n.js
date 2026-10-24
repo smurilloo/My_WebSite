@@ -76,6 +76,7 @@ window.I18N_EN = {
   'contact.l1': "Let's talk",
   'contact.l2': 'about data.',
   'footer.top': 'Back to top ↑',
+  'footer.visits': 'visits',
 
   'sleep.title': 'Entering suspension mode due to inactivity',
   'sleep.hint': 'Move the mouse, tap the screen or press any key to resume',
