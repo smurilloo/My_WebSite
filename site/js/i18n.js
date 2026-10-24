@@ -57,7 +57,7 @@ window.I18N_EN = {
   'p4.d': 'Fixed risk per trade and dynamic profit protection. Specific rules and parameters are confidential.',
   'p5.t': 'Operations',
   'p5.d': 'systemd services, a health guard, Telegram alerts and a Claude Code agent as a monitor that checks the system and reports any error or issue.',
-  'trading.disc': '* Backtest results from 2020-01-01 to 2026-10-22, net of fees, funding and slippage, risking 0.5% of the account per trade. Past performance does not guarantee future results.',
+  'trading.disc': '* Backtest results from 2020-01-01 to 2026-10-22, net of fees, funding and slippage, risking 0.5% of the account per trade. S2: average over 8 shifted candle grids (out-of-sample walk-forward 2022-2026: PF ≈ 1.4-1.6). Past performance does not guarantee future results.',
 
   'exp.title': 'Experience',
   'j1': 'Trading systems with LLM agents and general MLOps support. I built the entire CI/CD suite with Databricks Asset Bundles and GitHub Actions, automated model retraining, designed scalable systems, optimized infrastructure and developed agent-powered business processes.',
