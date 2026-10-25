@@ -192,13 +192,15 @@ main { position: relative; z-index: 2; }
 .stat { padding: 28px 24px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(5, 6, 10, 0.35); }
 .stat b { display: block; font-size: clamp(32px, 3.6vw, 56px); font-weight: 400; letter-spacing: -0.04em; text-transform: none; color: var(--accent); line-height: 1; margin-bottom: 12px; }
 .stat span { color: var(--muted); font-size: 14px; }
-.strats { display: grid; grid-template-columns: repeat(2, 1fr); margin-top: 32px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.strats { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 32px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
 .strat { padding: 28px 24px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(5, 6, 10, 0.35); }
 .strat__id { color: var(--accent-2); font-size: 12px; }
 .strat h4 { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; margin: 8px 0 20px; }
 .strat b { font-size: clamp(40px, 4vw, 64px); font-weight: 400; letter-spacing: -0.04em; color: var(--accent); line-height: 1; }
 .strat__unit { color: var(--muted); font-size: 12px; margin-left: 8px; }
 .strat__meta { color: var(--muted); font-size: 12px; margin-top: 16px; }
+.strat__meta + .strat__meta { margin-top: 10px; }
+.strat__lab { display: block; color: var(--fg); margin-bottom: 4px; }
 .backtest-date { color: var(--muted); font-size: 12px; margin-top: 16px; }
 .backtest-date b { color: var(--fg); font-weight: 400; }
 @media (max-width: 800px) { .strats { grid-template-columns: 1fr; } }

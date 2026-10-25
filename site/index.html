@@ -138,7 +138,7 @@
       <header class="section__head">
         <span class="section__idx mono">02</span>
         <h2 class="section__title"><span class="split" data-i18n="trading.title">Tradester</span></h2>
-        <p class="section__intro reveal" data-i18n="trading.intro">Caso de estudio: mi propio bot de trading para el futuro perpetuo BTC/USDT en Bitget, con dos estrategias operando 24/7 desde una Raspberry Pi y monitoreado por un agente de IA que avisa por Telegram ante cualquier error.</p>
+        <p class="section__intro reveal" data-i18n="trading.intro">Caso de estudio: mi propio bot de trading para el futuro perpetuo BTC/USDT en Bitget, con tres estrategias operando 24/7 desde una Raspberry Pi y monitoreado por un agente de IA que avisa por Telegram ante cualquier error.</p>
       </header>
 
       <div class="trading__grid">
@@ -148,10 +148,10 @@
         </div>
 
         <div class="stats">
-          <div class="stat reveal"><b class="mono" data-count="322" data-dec="0">0</b><span data-i18n="st.trades">Operaciones en total (2 estrategias)</span></div>
-          <div class="stat reveal"><b class="mono" data-count="2.10" data-dec="2">0</b><span data-i18n="st.pf">Profit factor combinado</span></div>
-          <div class="stat reveal"><b class="mono" data-count="57.0" data-dec="1" data-prefix="+" data-suffix="%">0</b><span data-i18n="st.net">Retorno neto sobre la cuenta 2020→2026</span></div>
-          <div class="stat reveal"><b class="mono" data-count="55.3" data-dec="1" data-suffix="%">0</b><span data-i18n="st.win">Tasa de acierto global</span></div>
+          <div class="stat reveal"><b class="mono" data-count="273" data-dec="0">0</b><span data-i18n="st.trades">Operaciones en total (sistema con 3 estrategias)</span></div>
+          <div class="stat reveal"><b class="mono" data-count="2.77" data-dec="2">0</b><span data-i18n="st.pf">Profit factor combinado</span></div>
+          <div class="stat reveal"><b class="mono" data-count="62.1" data-dec="1" data-prefix="+" data-suffix="%">0</b><span data-i18n="st.net">Retorno neto sobre la cuenta 2020→2026</span></div>
+          <div class="stat reveal"><b class="mono" data-count="46.9" data-dec="1" data-suffix="%">0</b><span data-i18n="st.win">Tasa de acierto global</span></div>
         </div>
       </div>
 
@@ -159,26 +159,35 @@
         <div class="strat reveal">
           <span class="strat__id mono">S1</span>
           <h4 data-i18n="sx.s1">Giros en extremos</h4>
-          <b class="mono" data-count="125" data-dec="0">0</b><span class="strat__unit mono">trades</span>
-          <p class="strat__meta mono">52.8% <span data-i18n="sx.win">acierto</span> · PF 2.21 · +58.2 R</p>
+          <b class="mono" data-count="128" data-dec="0">0</b><span class="strat__unit mono">trades</span>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.is">Dentro de muestra 2020–2024</span>94 trades · 56.4% <span data-i18n="sx.win">acierto</span> · PF 2.67 · +45.3 R</p>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.val">2025–2026 · validación (†)</span>34 trades · 41.2% <span data-i18n="sx.win">acierto</span> · PF 1.59 · +13.1 R</p>
+        </div>
+        <div class="strat reveal">
+          <span class="strat__id mono">S2</span>
+          <h4 data-i18n="sx.s2">Momentum de serie temporal</h4>
+          <b class="mono" data-count="115" data-dec="0">0</b><span class="strat__unit mono">trades</span>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.is">Dentro de muestra 2020–2024</span>92 trades · 37.0% <span data-i18n="sx.win">acierto</span> · PF 3.49 · +57.4 R</p>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.oos">Fuera de muestra 2025–2026</span>23 trades · 30.4% <span data-i18n="sx.win">acierto</span> · PF 1.42 · +2.6 R</p>
         </div>
         <div class="strat reveal">
           <span class="strat__id mono">S4</span>
           <h4 data-i18n="sx.s4">Rupturas con impulso</h4>
-          <b class="mono" data-count="197" data-dec="0">0</b><span class="strat__unit mono">trades</span>
-          <p class="strat__meta mono">56.9% <span data-i18n="sx.win">acierto</span> · PF 2.01 · +55.9 R</p>
+          <b class="mono" data-count="209" data-dec="0">0</b><span class="strat__unit mono">trades</span>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.is">Dentro de muestra 2020–2024</span>160 trades · 57.5% <span data-i18n="sx.win">acierto</span> · PF 2.06 · +42.8 R</p>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.val">2025–2026 · validación (†)</span>49 trades · 53.1% <span data-i18n="sx.win">acierto</span> · PF 1.74 · +12.7 R</p>
         </div>
       </div>
-      <p class="backtest-date mono reveal"><span data-i18n="sx.last">Último backtest ejecutado:</span> <b>2026-10-24</b> · <span data-i18n="sx.period">Periodo: 2020-01-01 → 2026-10-22</span></p>
+      <p class="backtest-date mono reveal"><span data-i18n="sx.last">Último backtest ejecutado:</span> <b>2026-10-25</b> · <span data-i18n="sx.period">Periodo: 2020-01-01 → 2026-10-22</span></p>
 
       <div class="pipeline">
         <div class="step reveal"><span class="mono">01</span><h4 data-i18n="p1.t">Datos</h4><p data-i18n="p1.d">Velas de 1D/4H/1H/15m/1m desde 2020 y el libro de órdenes en vivo, registrados en cada ciclo para hacer backtesting con datos reales.</p></div>
-        <div class="step reveal"><span class="mono">02</span><h4 data-i18n="p2.t">Dos estrategias</h4><p data-i18n="p2.d">Dos estrategias independientes en distintas temporalidades; solo se operan señales completamente confirmadas. Los criterios de entrada son confidenciales.</p></div>
+        <div class="step reveal"><span class="mono">02</span><h4 data-i18n="p2.t">Tres estrategias</h4><p data-i18n="p2.d">Tres estrategias independientes en distintas temporalidades (15m, 1H y diario); solo se operan señales completamente confirmadas. Los criterios de entrada son confidenciales.</p></div>
         <div class="step reveal"><span class="mono">03</span><h4 data-i18n="p3.t">Optimización GPU</h4><p data-i18n="p3.d">Motor Numba/CUDA en una RTX 4060: análisis walk-forward, bootstrapping, simulación Monte Carlo y pruebas de vecindad de parámetros.</p></div>
         <div class="step reveal"><span class="mono">04</span><h4 data-i18n="p4.t">Riesgo</h4><p data-i18n="p4.d">Riesgo fijo por operación y protección dinámica de ganancias. Las reglas y los parámetros específicos son confidenciales.</p></div>
         <div class="step reveal"><span class="mono">05</span><h4 data-i18n="p5.t">Operación</h4><p data-i18n="p5.d">Servicios systemd, un health guard, alertas por Telegram y un agente de Claude Code como monitor que revisa el sistema y notifica cualquier error o problema.</p></div>
       </div>
-      <p class="disclaimer mono reveal" data-i18n="trading.disc">* Resultados de backtest del 2020-01-01 al 2026-10-22, netos de comisiones, funding y deslizamiento, con un riesgo de 0,5% de la cuenta por operación. Los resultados pasados no garantizan rendimientos futuros.</p>
+      <p class="disclaimer mono reveal" data-i18n="trading.disc">* Backtests del 2020-01-01 al 2026-10-22, netos de comisiones, funding y deslizamiento, con un riesgo de 0,5% de la cuenta por operación; cada estrategia se muestra por separado. Dentro de muestra = 2020-2024. S2 se eligió solo con 2020-2024, así que su 2025-2026 es fuera de muestra real. (†) Los parámetros vigentes de S1 y S4 se calibraron con datos hasta 2026-10, por lo que su 2025-2026 es validación, no fuera de muestra estricto. Totales: el sistema en vivo con las tres estrategias, donde S2 y S1/S4 no comparten lado. Los resultados pasados no garantizan rendimientos futuros.</p>
     </section>
 
     <!-- EXPERIENCE -->
