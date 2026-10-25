@@ -48,6 +48,7 @@ window.I18N_EN = {
   'sx.oos': 'Out-of-sample 2025–2026',
   'sx.val': '2025–2026 · validation (†)',
   'sx.win': 'win rate',
+  'sx.r': 'risk units (R)',
   'sx.last': 'Last backtest run:',
   'sx.period': 'Period: 2020-01-01 → 2026-10-22',
   'p1.t': 'Data',
@@ -60,7 +61,7 @@ window.I18N_EN = {
   'p4.d': 'Fixed risk per trade and dynamic profit protection. Specific rules and parameters are confidential.',
   'p5.t': 'Operations',
   'p5.d': 'systemd services, a health guard, Telegram alerts and a Claude Code agent as a monitor that checks the system and reports any error or issue.',
-  'trading.disc': '* Backtests from 2020-01-01 to 2026-10-22, net of fees, funding and slippage, risking 0.5% of the account per trade; each strategy is shown on its own. In-sample = 2020-2024. S2 was selected using 2020-2024 only, so its 2025-2026 is a true out-of-sample. (†) The current S1 and S4 parameters were calibrated on data up to 2026-10, so their 2025-2026 is validation, not strict out-of-sample. Totals: the live system with all three strategies, where S2 and S1/S4 never share a side. Past performance does not guarantee future results.',
+  'trading.disc': '* Backtests from 2020-01-01 to 2026-10-22, net of fees, funding and slippage, risking 0.5% of the account per trade. R = risk unit: the amount lost when a trade hits its stop (0.5% of the account), so +10 R equals +5% of the account. Each strategy is shown on its own. In-sample = 2020-2024. S2 was selected using 2020-2024 only, so its 2025-2026 is a true out-of-sample. (†) The current S1 and S4 parameters were calibrated on data up to 2026-10, so their 2025-2026 is validation, not strict out-of-sample. Totals: the live system with all three strategies, where S2 and S1/S4 never share a side. Past performance does not guarantee future results.',
 
   'exp.title': 'Experience',
   'j1': 'Trading systems with LLM agents and general MLOps support. I built the entire CI/CD suite with Databricks Asset Bundles and GitHub Actions, automated model retraining, designed scalable systems, optimized infrastructure and developed agent-powered business processes.',
