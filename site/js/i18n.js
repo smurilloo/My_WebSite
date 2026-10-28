@@ -47,7 +47,7 @@ window.I18N_EN = {
   'sx.va': 'Validation 2024',
   'sx.oos': 'Test 2025–2026 · out-of-sample',
   'st.all': 'Net return 2020→2026 (yearly sum, includes training)',
-  'sx.tr14': 'Training 2018–2024 · S1 + S4 combined',
+  'sx.tr14': 'Training 2018–2024',
   'sx.va25': 'Validation 2025',
   'sx.te26': 'Test 2026 · out-of-sample',
   'sx.u26': 'PF out-of-sample 2026',
@@ -66,7 +66,7 @@ window.I18N_EN = {
   'p4.d': 'Per-trade risk scaled by signal quality and dynamic profit protection. Specific rules and parameters are confidential.',
   'p5.t': 'Operations',
   'p5.d': 'systemd services, a health guard, Telegram alerts and a Claude Code agent as a monitor that checks the system and reports any error or issue.',
-  'trading.disc': '* Backtests net of fees, funding and slippage, on Bitget 15m candles up to 2026-10-28. R = risk unit: the amount lost when a trade hits its stop (0.5% of the account), so +10 R equals +5% of the account. S1 and S4 run in segmented mode: each signal is classified by setup type and uses its own parameters, selected using 2018-2024 only (training); 2025 was used only to switch off setup types (validation) and 2026 was not used at all, so it is a true out-of-sample. They risk 1 R per trade, more on higher-quality signals. S2 risks half an R and was selected using 2020-2024 only, so its 2025-2026 is a true out-of-sample. Training PF is inflated by the selection itself; the out-of-sample figures are the credible ones. Totals: S1+S4 plus S2 from 2020 to 2026, with the account reset to 1,000,000 USD every year (no compounding), not modelling that S2 and S1/S4 never share a side.',
+  'trading.disc': '* Backtests on Bitget 15m candles up to 2026-10-28, net of fees, funding and slippage. R = risk unit: the amount lost when a trade hits its stop (0.5% of the account), so +10 R equals +5% of the account. S1 and S4 risk 1 R per trade, and somewhat more on higher-quality signals; S2 risks 0.5 R. S1 and S4 classify each signal by market setup type and use their own parameters for each type. Those parameters were selected using 2018-2024 data only (training); 2025 was used only to switch off setup types (validation) and 2026 was not used at any step, so it is a true out-of-sample period. S2 was selected using 2020-2024 data only, so 2025 and 2026 are true out-of-sample for it.',
 
   'exp.title': 'Experience',
   'j1': 'Trading systems with LLM agents and general MLOps support. I built the entire CI/CD suite with Databricks Asset Bundles and GitHub Actions, automated model retraining, designed scalable systems, optimized infrastructure and developed agent-powered business processes.',

@@ -160,9 +160,9 @@
           <span class="strat__id mono">S1</span>
           <h4 data-i18n="sx.s1">Giros en extremos</h4>
           <b class="mono" data-count="1.86" data-dec="2">0</b><span class="strat__unit mono" data-i18n="sx.u26">PF fuera de muestra 2026</span>
-          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.tr14">Entrenamiento 2018–2024 · S1 + S4 juntos</span>164 trades · 53% <span data-i18n="sx.win">acierto</span> · PF 4.79 · +177.1 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
-          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.va25">Validación 2025</span>8 trades · PF 3.34</p>
-          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.te26">Prueba 2026 · fuera de muestra</span>12 trades · PF 1.86</p>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.tr14">Entrenamiento 2018–2024</span>68 trades · 62% <span data-i18n="sx.win">acierto</span> · PF 6.27 · +156.2 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.va25">Validación 2025</span>8 trades · 50% <span data-i18n="sx.win">acierto</span> · PF 3.34 · +9.9 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.te26">Prueba 2026 · fuera de muestra</span>12 trades · 42% <span data-i18n="sx.win">acierto</span> · PF 1.86 · +9.2 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
         </div>
         <div class="strat reveal">
           <span class="strat__id mono">S2</span>
@@ -176,9 +176,9 @@
           <span class="strat__id mono">S4</span>
           <h4 data-i18n="sx.s4">Rupturas con impulso</h4>
           <b class="mono" data-count="1.47" data-dec="2">0</b><span class="strat__unit mono" data-i18n="sx.u26">PF fuera de muestra 2026</span>
-          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.tr14">Entrenamiento 2018–2024 · S1 + S4 juntos</span>164 trades · 53% <span data-i18n="sx.win">acierto</span> · PF 4.79 · +177.1 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
-          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.va25">Validación 2025</span>12 trades · PF 2.82</p>
-          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.te26">Prueba 2026 · fuera de muestra</span>15 trades · PF 1.47</p>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.tr14">Entrenamiento 2018–2024</span>96 trades · 47% <span data-i18n="sx.win">acierto</span> · PF 2.22 · +21.0 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.va25">Validación 2025</span>12 trades · 58% <span data-i18n="sx.win">acierto</span> · PF 2.82 · +2.5 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
+          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.te26">Prueba 2026 · fuera de muestra</span>15 trades · 40% <span data-i18n="sx.win">acierto</span> · PF 1.47 · +1.1 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
         </div>
       </div>
       <p class="backtest-date mono reveal"><span data-i18n="sx.last">Último backtest ejecutado:</span> <b>2026-10-28</b> · <span data-i18n="sx.period">Periodo: 2018-07-24 → 2026-10-28</span></p>
@@ -190,7 +190,7 @@
         <div class="step reveal"><span class="mono">04</span><h4 data-i18n="p4.t">Riesgo</h4><p data-i18n="p4.d">Riesgo por operación ajustado a la calidad de la señal y protección dinámica de ganancias. Las reglas y los parámetros específicos son confidenciales.</p></div>
         <div class="step reveal"><span class="mono">05</span><h4 data-i18n="p5.t">Operación</h4><p data-i18n="p5.d">Servicios systemd, un health guard, alertas por Telegram y un agente de Claude Code como monitor que revisa el sistema y notifica cualquier error o problema.</p></div>
       </div>
-      <p class="disclaimer mono reveal" data-i18n="trading.disc">* Backtests netos de comisiones, funding y deslizamiento, con velas de 15m de Bitget hasta el 2026-10-28. R = unidad de riesgo: lo que se pierde si salta el stop de una operación (0,5% de la cuenta), así que +10 R equivale a +5% de la cuenta. S1 y S4 operan en modo segmentado: cada señal se clasifica por tipo de setup y usa sus propios parámetros, elegidos solo con 2018-2024 (entrenamiento); 2025 solo sirvió para apagar tipos de setup (validación) y 2026 no se usó para nada, así que es fuera de muestra real. Arriesgan 1 R por operación, más en las señales de mayor calidad. S2 arriesga medio R y se eligió solo con 2020-2024, así que su 2025-2026 es fuera de muestra real. El PF de entrenamiento está inflado por la propia selección; lo creíble es el fuera de muestra. Totales: S1+S4 más S2 de 2020 a 2026, con la cuenta reiniciada a 1.000.000 USD cada año (sin interés compuesto) y sin modelar que S2 y S1/S4 no comparten lado.</p>
+      <p class="disclaimer mono reveal" data-i18n="trading.disc">* Backtests con velas de 15m de Bitget hasta el 2026-10-28, netos de comisiones, funding y deslizamiento. R = unidad de riesgo: lo que se pierde si salta el stop de una operación (0,5% de la cuenta), así que +10 R equivale a +5% de la cuenta. S1 y S4 arriesgan 1 R por operación, y algo más en las señales de mayor calidad; S2 arriesga 0,5 R. S1 y S4 clasifican cada señal según el tipo de setup del mercado y usan parámetros propios para cada tipo. Esos parámetros se eligieron solo con datos de 2018 a 2024 (entrenamiento); 2025 se usó únicamente para desactivar tipos de setup (validación) y 2026 no se usó en ningún paso, por lo que es un periodo fuera de muestra real. S2 se eligió solo con datos de 2020 a 2024, así que 2025 y 2026 son fuera de muestra real para ella.</p>
     </section>
 
     <!-- EXPERIENCE -->
@@ -298,7 +298,7 @@
   </div>
 
   <script type="module" src="js/scene.js?v=10"></script>
-  <script src="js/i18n.js?v=12"></script>
+  <script src="js/i18n.js?v=13"></script>
   <script src="js/main.js?v=13"></script>
 </body>
 </html>
