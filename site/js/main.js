@@ -260,26 +260,24 @@
   // ---------- Live BTCUSDT 1H candlestick chart (Bitget public API) ----------
   const cv = $('#candles'), ctx = cv.getContext('2d'), chartLive = $('#chartLive');
   const CANDLES_URL = 'https://api.bitget.com/api/v2/mix/market/candles?symbol=BTCUSDT&productType=USDT-FUTURES&granularity=1H&limit=';
-  const N = 72;
-  let candles = [], visible = false, W = 0, H = 0, failed = false;
+  // N candles are drawn; WARM extra ones are fetched only so the EMA matches Bitget's from the first visible candle
+  const N = 72, WARM = 60;
+  let candles = [], emaLine = [], visible = false, W = 0, H = 0, failed = false;
 
   async function fetchCandles(limit) {
     const r = await fetch(CANDLES_URL + limit, { cache: 'no-store' });
     const j = await r.json();
     if (j.code !== '00000' || !Array.isArray(j.data)) throw new Error('bitget');
-    return j.data.map(d => ({ t: +d[0], o: +d[1], h: +d[2], l: +d[3], c: +d[4] }));
+    return j.data.map(d => ({ t: +d[0], o: +d[1], h: +d[2], l: +d[3], c: +d[4] })).sort((a, b) => a.t - b.t);
   }
   async function refreshCandles() {
     try {
-      if (!candles.length) candles = await fetchCandles(N);
-      else {
-        // merge the latest candles: update the forming one, append when a new hour opens
-        (await fetchCandles(2)).forEach(k => {
-          const i = candles.findIndex(c => c.t === k.t);
-          if (i >= 0) candles[i] = k;
-          else if (k.t > candles[candles.length - 1].t) { candles.push(k); candles.shift(); }
-        });
-      }
+      // Always replace the whole window with Bitget's own candles: merging only the latest ones
+      // left gaps whenever polling paused (hidden tab, scrolled away, idle sleep).
+      const k = await fetchCandles(N + WARM);
+      if (k.length < 2) throw new Error('bitget');
+      emaLine = ema(k.map(c => c.c), 20).slice(-N);
+      candles = k.slice(-N);
       failed = false;
     } catch (e) {
       failed = !candles.length;
@@ -332,10 +330,10 @@
       ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(plotW, gy); ctx.stroke();
       ctx.fillText((hi - g * (hi - lo) / 4).toFixed(0), plotW + 8, gy + 3);
     }
-    // time axis (local time), one label every 12 hours
+    // time axis (local time), labels on the 00:00 and 12:00 candles
     all.forEach((k, i) => {
-      if (i % 12 !== 6) return;
       const x = i * step + step / 2, d = new Date(k.t);
+      if (d.getHours() % 12 || d.getMinutes()) return;
       const label = d.getHours() === 0 ? dayFmt.format(d) : hourFmt.format(d);
       ctx.fillText(label, x - ctx.measureText(label).width / 2, H - 8);
     });
@@ -348,7 +346,7 @@
       ctx.fillRect(x - step * 0.32, top, step * 0.64, hgt);
     });
     // EMA 20
-    const e = ema(all.map(k => k.c), 20);
+    const e = emaLine;
     ctx.strokeStyle = 'rgba(139,124,255,0.9)'; ctx.lineWidth = 1.5; ctx.beginPath();
     e.forEach((v, i) => { const x = i * step + step / 2; i ? ctx.lineTo(x, y(v)) : ctx.moveTo(x, y(v)); });
     ctx.stroke();
