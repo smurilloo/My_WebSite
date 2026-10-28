@@ -1,0 +1,64 @@
+# Keeps the site's visit counter alive and backed up.
+# The counter lives at abacus.jasoncameron.dev, which deletes a key after 6 months
+# without any request; every /get renews that period, so a daily read keeps it forever.
+# The value is also saved to counter/visits.json (at least monthly, so GitHub never
+# pauses this schedule for inactivity). If the key ever disappears it is recreated
+# from that backup; if the value ever drops below the backup the run fails, which
+# sends a GitHub notification.
+name: Visit counter
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: visit-counter
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refresh, back up and restore if needed
+        env:
+          API: https://abacus.jasoncameron.dev
+          KEY: smurilloo-mywebsite/visits
+          FILE: counter/visits.json
+        run: |
+          set -euo pipefail
+          backup=$(jq -r '.value // 0' "$FILE" 2>/dev/null || echo 0)
+          last=$(jq -r '.updated // "1970-01-01"' "$FILE" 2>/dev/null || echo 1970-01-01)
+
+          code=$(curl -s -o resp.json -w '%{http_code}' --retry 3 --retry-all-errors "$API/get/$KEY")
+          if [ "$code" = "404" ]; then
+            echo "Counter missing: recreating it at $backup"
+            curl -sf --retry 3 -X POST "$API/create/$KEY?initializer=$backup" > /dev/null
+            curl -sf --retry 3 "$API/get/$KEY" > resp.json
+          elif [ "$code" != "200" ]; then
+            echo "::error::Counter service answered HTTP $code; backup kept at $backup"
+            exit 1
+          fi
+          value=$(jq -r '.value' resp.json)
+          echo "Visits: $value (backup $backup)"
+
+          if [ "$value" -lt "$backup" ]; then
+            echo "::error::Counter dropped from $backup to $value; backup not overwritten"
+            exit 1
+          fi
+
+          age=$(( ( $(date -u +%s) - $(date -u -d "$last" +%s) ) / 86400 ))
+          if [ "$value" -eq "$backup" ] && [ "$age" -lt 30 ]; then
+            echo "No change"
+            exit 0
+          fi
+          mkdir -p counter
+          jq -n --argjson v "$value" --arg d "$(date -u +%F)" '{value: $v, updated: $d}' > "$FILE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898732+github-actions[bot]@users.noreply.github.com"
+          git add "$FILE"
+          git commit -m "Back up visit counter: $value"
+          git push

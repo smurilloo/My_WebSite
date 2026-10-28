@@ -7,6 +7,10 @@ services:
     buildCommand: echo "static site, no build step"
     staticPublishPath: ./site
     pullRequestPreviewsEnabled: false
+    # visit-counter backups (.github/workflows/visit-counter.yml) don't change the site
+    buildFilter:
+      ignoredPaths:
+        - counter/**
     headers:
       - path: /*
         name: X-Content-Type-Options
