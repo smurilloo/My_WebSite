@@ -74,6 +74,7 @@ window.I18N_EN = {
   'j4': 'Data models and processes with Kubernetes, Azure and Databricks; ML for fraud detection, classification and customer-behavior forecasting; marketing automation.',
   'j5.role': 'Finance and Management Engineer',
   'j5': 'Tracking of key operational indicators, financial and operational reporting, statistical data processing, SQL queries on database servers, data visualizations, general administrative support, continuous process improvement and financial model updates. Rionegro, Antioquia.',
+  'j6': 'Staff supervision, portfolio status reports, updating the server with consolidated daily operation files, operations control, design and rollout of dialing campaigns, regular committees on the state of operations and reports to management on the actions needed to meet performance indicators, using advanced Excel. Medellín, Antioquia.',
   'edu.school': 'National University of Colombia',
   'edu.ms.role': "Master's Degree in Analytics",
   'edu.ms': 'Graduate studies in data analytics, statistics and machine learning · Medellín, Colombia.',
