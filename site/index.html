@@ -183,6 +183,31 @@
       </div>
       <p class="backtest-date mono reveal"><span data-i18n="sx.last">Último backtest ejecutado:</span> <b>2026-10-28</b> · <span data-i18n="sx.period">Periodo: 2018-07-24 → 2026-10-28</span></p>
 
+      <div class="real">
+        <p class="real__head mono reveal"><span class="live"><i></i><span data-i18n="rl.head">Operativa real en Bitget · capital real</span></span><span data-i18n="rl.period">Desde el 2026-10-15 · solo trades cerrados · actualizado al 2026-10-30</span></p>
+        <div class="strats">
+          <div class="strat reveal">
+            <span class="strat__id mono" data-i18n="rl.total">Total</span>
+            <h4 data-i18n="rl.all">Cuenta completa</h4>
+            <b class="mono" data-count="1.31" data-dec="2" data-prefix="+" data-suffix="%">0</b><span class="strat__unit mono" data-i18n="rl.net">neto de comisiones</span>
+            <p class="strat__meta mono">4 trades · S1 + S2</p>
+          </div>
+          <div class="strat reveal">
+            <span class="strat__id mono">S1</span>
+            <h4 data-i18n="sx.s1">Giros en extremos</h4>
+            <b class="mono" data-count="1.30" data-dec="2" data-prefix="+" data-suffix="%">0</b><span class="strat__unit mono" data-i18n="rl.net">neto de comisiones</span>
+            <p class="strat__meta mono">3 trades</p>
+          </div>
+          <div class="strat reveal">
+            <span class="strat__id mono">S2</span>
+            <h4 data-i18n="sx.s2">Momentum de serie temporal</h4>
+            <b class="mono" data-count="0.02" data-dec="2" data-prefix="+" data-suffix="%">0</b><span class="strat__unit mono" data-i18n="rl.net">neto de comisiones</span>
+            <p class="strat__meta mono">1 trade</p>
+          </div>
+        </div>
+        <p class="backtest-date mono reveal" data-i18n="rl.note">Rentabilidad sobre el capital de la cuenta al 2026-10-15, neta de comisiones y funding según Bitget. S4 no ha cerrado trades en este periodo. Las posiciones abiertas no se incluyen.</p>
+      </div>
+
       <div class="pipeline">
         <div class="step reveal"><span class="mono">01</span><h4 data-i18n="p1.t">Datos</h4><p data-i18n="p1.d">Velas de 1D/4H/1H/15m/1m desde 2018 y el libro de órdenes en vivo, registrados en cada ciclo para hacer backtesting con datos reales.</p></div>
         <div class="step reveal"><span class="mono">02</span><h4 data-i18n="p2.t">Tres estrategias</h4><p data-i18n="p2.d">Tres estrategias independientes en distintas temporalidades (15m, 1H y diario); solo se operan señales completamente confirmadas. S1 y S4 clasifican cada señal por tipo de setup del mercado y usan parámetros propios para cada tipo. Los criterios de entrada son confidenciales.</p></div>
