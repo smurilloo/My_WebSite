@@ -1,15 +1,15 @@
 # Keeps the "live trading on Bitget" block of the Tradester section up to date.
 # The bot on the Raspberry Pi commits its trade ledger (skills/bitget/data/trades.sqlite)
-# to the private Tradester repo every hour at :00. This job reads it a little later,
-# rewrites the block in site/index.html and commits only when a new trade has closed,
-# so Render redeploys exactly then.
-# Needs the TRADESTER_TOKEN secret: a fine-grained token with read-only "Contents"
+# to the private Tradester repo every hour at :00. This job reads it twice a day
+# (00:20 and 12:20 UTC), rewrites the block in site/index.html and commits only when
+# a new trade has closed, so Render redeploys only then.
+# Needs the TRADING_REPO_CONNECT secret: a fine-grained token with read-only "Contents"
 # access to enginemazetrack/OpenClawster_Test.
 name: Live results
 
 on:
   schedule:
-    - cron: "20 * * * *"
+    - cron: "20 0,12 * * *"
   workflow_dispatch:
 
 permissions:
@@ -25,11 +25,11 @@ jobs:
 
       - name: Download the trade ledger
         env:
-          TOKEN: ${{ secrets.TRADESTER_TOKEN }}
+          TOKEN: ${{ secrets.TRADING_REPO_CONNECT }}
         run: |
           set -euo pipefail
           if [ -z "$TOKEN" ]; then
-            echo "::error::TRADESTER_TOKEN secret is missing"
+            echo "::error::TRADING_REPO_CONNECT secret is missing"
             exit 1
           fi
           curl -sSf --retry 3 --retry-all-errors \

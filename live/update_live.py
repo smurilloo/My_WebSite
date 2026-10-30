@@ -2,9 +2,8 @@
 
 Usage: python live/update_live.py <path to trades.sqlite>
 
-Reads the closed trades (net of fees and funding as reported by Bitget) since
-config.json "since", adds config.json "extra_trades" (closes the ledger never got,
-skipped if the ledger already has them) and replaces everything between the
+Reads the closed trades of every strategy (net of fees and funding as reported by
+Bitget) since config.json "since" and replaces everything between the
 live:start / live:end markers in site/index.html. Prints "changed" or "unchanged".
 """
 
@@ -39,13 +38,7 @@ def load_trades(db_path, cfg):
         "WHERE status = 'CLOSED' AND exit_ts_utc IS NOT NULL AND net_profit IS NOT NULL"
     ).fetchall()
     con.close()
-    trades = [(s, epoch(ts), float(net)) for s, ts, net in rows if epoch(ts) >= since]
-    for x in cfg.get("extra_trades", []):
-        t = epoch(x["exit_ts_utc"])
-        dup = any(s == x["strategy"] and abs(e - t) < 3600 for s, e, _ in trades)
-        if t >= since and not dup:
-            trades.append((x["strategy"], t, float(x["net_profit"])))
-    return trades
+    return [(s, epoch(ts), float(net)) for s, ts, net in rows if epoch(ts) >= since]
 
 
 def card(label, name_key, name, pct, meta, label_key=None):
