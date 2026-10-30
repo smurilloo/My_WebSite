@@ -63,7 +63,7 @@ window.I18N_EN = {
   'rl.net': 'net of fees',
   'rl.note': 'Sum of each trade\'s net return as a % of the account when it was opened, net of fees and funding as reported by Bitget. Updated automatically with every closed trade; open positions are excluded.',
   'p1.t': 'Data',
-  'p1.d': '1D/4H/1H/15m/1m candles since 2018 plus the live order book, logged every cycle for backtesting on real data.',
+  'p1.d': 'Live, the strategies decide on 1D/4H/1H/15m candles and the order book. Every cycle is logged (plus 1m candles for research), with history since 2018 for backtesting on real data.',
   'p2.t': 'Three strategies',
   'p2.d': 'Three independent strategies on different timeframes (15m, 1H and daily); only fully confirmed signals are traded. S1 and S4 classify each signal by market setup type and use their own parameters for each type. Entry criteria are confidential.',
   'p3.t': 'GPU optimization',
