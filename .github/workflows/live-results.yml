@@ -1,14 +1,17 @@
 # Keeps the "live trading on Bitget" block of the Tradester section up to date.
-# The private trading repo publishes ./trades.sqlite here twice a day (only percentages,
-# no account amounts) with its own token; this repo holds no credential to it.
+# The private trading repo publishes ./trades.sqlite here twice a day (11:00 and 23:00 UTC,
+# only percentages, no account amounts) with its own token; this repo holds no credential to it.
 # Whenever that file changes, this job rewrites the block in site/index.html and commits
-# only if the numbers changed, so Render redeploys only then.
+# only if the numbers changed, so Render redeploys only then. The schedule half an hour
+# after each publish is a safety net in case a push event is ever missed.
 name: Live results
 
 on:
   push:
     branches: [main]
     paths: [trades.sqlite]
+  schedule:
+    - cron: "30 11,23 * * *"
   workflow_dispatch:
 
 permissions:
