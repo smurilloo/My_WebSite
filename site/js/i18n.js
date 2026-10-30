@@ -61,7 +61,7 @@ window.I18N_EN = {
   'rl.total': 'Total',
   'rl.all': 'Whole account',
   'rl.net': 'net of fees',
-  'rl.note': 'Return on account capital as of 2026-10-15, net of fees and funding as reported by Bitget. Updated automatically with every closed trade; open positions are excluded.',
+  'rl.note': 'Sum of each trade\'s net return as a % of the account when it was opened, net of fees and funding as reported by Bitget. Updated automatically with every closed trade; open positions are excluded.',
   'p1.t': 'Data',
   'p1.d': '1D/4H/1H/15m/1m candles since 2018 plus the live order book, logged every cycle for backtesting on real data.',
   'p2.t': 'Three strategies',

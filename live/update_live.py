@@ -4,13 +4,12 @@ Usage: python live/update_live.py <path to trades.sqlite>
 
 Reads the closed trades of every strategy since config.json "since" from the public
 ledger the trading repo publishes (net_pnl_pct_account: net of fees and funding, as a
-% of the account at entry), compounds them in exit order and replaces everything
+% of the account at entry), adds them up per strategy and replaces everything
 between the live:start / live:end markers in site/index.html. Prints "changed" or
 "unchanged".
 """
 
 import json
-import math
 import sqlite3
 import sys
 from datetime import datetime, timezone
@@ -44,10 +43,6 @@ def load_trades(db_path, cfg):
     return [(s, epoch(ts), float(pct)) for s, ts, pct in rows if epoch(ts) >= since]
 
 
-def compound(pcts):
-    """Each % is relative to the account at entry, so chain them in exit order."""
-    return (math.prod(1 + p / 100 for p in pcts) - 1) * 100
-
 
 def card(label, name_key, name, pct, meta, label_key=None):
     lab = f' data-i18n="{label_key}"' if label_key else ""
@@ -74,7 +69,7 @@ def render(trades, cfg):
     order = sorted(by)
     last = datetime.fromtimestamp(max(t for _, t, _ in trades), timezone.utc).strftime("%Y-%m-%d") if trades else "—"
 
-    total = compound(pct for _, _, pct in trades)
+    total = sum(pct for _, _, pct in trades)
     html = [
         '        <p class="real__head mono reveal"><span class="live"><i></i><span data-i18n="rl.head">'
         'Operativa real en Bitget · capital real</span></span><span><span data-i18n="rl.period">'
@@ -85,12 +80,12 @@ def render(trades, cfg):
     ]
     for sid in order:
         key, name = NAMES.get(sid, ("", sid))
-        html.append(card(sid, key, name, compound(by[sid]), n_trades(len(by[sid]))))
+        html.append(card(sid, key, name, sum(by[sid]), n_trades(len(by[sid]))))
     html.append("        </div>\n")
     html.append(
-        '        <p class="backtest-date mono reveal" data-i18n="rl.note">Rentabilidad sobre el capital de la cuenta '
-        f'al {cfg["since"]}, neta de comisiones y funding según Bitget. Se actualiza automáticamente con cada '
-        "trade cerrado; las posiciones abiertas no se incluyen.</p>\n"
+        '        <p class="backtest-date mono reveal" data-i18n="rl.note">Suma de la rentabilidad neta de cada trade, '
+        "en % de la cuenta al abrirlo, neta de comisiones y funding según Bitget. Se actualiza automáticamente "
+        "con cada trade cerrado; las posiciones abiertas no se incluyen.</p>\n"
     )
     return "".join(html)
 
