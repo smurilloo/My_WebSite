@@ -1,0 +1,52 @@
+# Keeps the "live trading on Bitget" block of the Tradester section up to date.
+# The bot on the Raspberry Pi commits its trade ledger (skills/bitget/data/trades.sqlite)
+# to the private Tradester repo every hour at :00. This job reads it a little later,
+# rewrites the block in site/index.html and commits only when a new trade has closed,
+# so Render redeploys exactly then.
+# Needs the TRADESTER_TOKEN secret: a fine-grained token with read-only "Contents"
+# access to enginemazetrack/OpenClawster_Test.
+name: Live results
+
+on:
+  schedule:
+    - cron: "20 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: live-results
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the trade ledger
+        env:
+          TOKEN: ${{ secrets.TRADESTER_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::TRADESTER_TOKEN secret is missing"
+            exit 1
+          fi
+          curl -sSf --retry 3 --retry-all-errors \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github.raw" \
+            -o "$RUNNER_TEMP/trades.sqlite" \
+            "https://api.github.com/repos/enginemazetrack/OpenClawster_Test/contents/skills/bitget/data/trades.sqlite?ref=main"
+
+      - name: Rewrite the block and commit if it changed
+        run: |
+          set -euo pipefail
+          result=$(python3 live/update_live.py "$RUNNER_TEMP/trades.sqlite")
+          echo "Live block: $result"
+          [ "$result" = "changed" ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898732+github-actions[bot]@users.noreply.github.com"
+          git add site/index.html
+          git commit -m "Update live Bitget results"
+          git pull --rebase
+          git push
