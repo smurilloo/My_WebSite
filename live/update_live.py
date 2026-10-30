@@ -1,6 +1,6 @@
 """Rewrite the "live trading on Bitget" block of site/index.html from the bot's trade ledger.
 
-Usage: python live/update_live.py <path to trades.sqlite>
+Usage: LIVE_CAPITAL_USDT=<capital> python live/update_live.py <path to trades.sqlite>
 
 Reads the closed trades of every strategy (net of fees and funding as reported by
 Bitget) since config.json "since" and replaces everything between the
@@ -8,6 +8,7 @@ live:start / live:end markers in site/index.html. Prints "changed" or "unchanged
 """
 
 import json
+import os
 import sqlite3
 import sys
 from datetime import datetime, timezone
@@ -59,7 +60,7 @@ def n_trades(n):
 
 
 def render(trades, cfg):
-    cap = float(cfg["capital_usdt"])
+    cap = float(os.environ["LIVE_CAPITAL_USDT"])  # account capital on "since"; kept only as a secret
     by = {}
     for s, _, net in trades:
         by.setdefault(cfg["strategies"].get(s, s), []).append(net)

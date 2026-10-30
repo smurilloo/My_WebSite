@@ -3,8 +3,9 @@
 # to the private Tradester repo every hour at :00. This job reads it twice a day
 # (00:20 and 12:20 UTC), rewrites the block in site/index.html and commits only when
 # a new trade has closed, so Render redeploys only then.
-# Needs the TRADING_REPO_CONNECT secret: a fine-grained token with read-only "Contents"
-# access to enginemazetrack/OpenClawster_Test.
+# Needs two secrets: TRADING_REPO_CONNECT, a fine-grained token with read-only "Contents"
+# access to enginemazetrack/OpenClawster_Test, and LIVE_CAPITAL_USDT, the account
+# capital the returns are measured against (never stored in the repo).
 name: Live results
 
 on:
@@ -39,8 +40,14 @@ jobs:
             "https://api.github.com/repos/enginemazetrack/OpenClawster_Test/contents/skills/bitget/data/trades.sqlite?ref=main"
 
       - name: Rewrite the block and commit if it changed
+        env:
+          LIVE_CAPITAL_USDT: ${{ secrets.LIVE_CAPITAL_USDT }}
         run: |
           set -euo pipefail
+          if [ -z "$LIVE_CAPITAL_USDT" ]; then
+            echo "::error::LIVE_CAPITAL_USDT secret is missing"
+            exit 1
+          fi
           result=$(python3 live/update_live.py "$RUNNER_TEMP/trades.sqlite")
           echo "Live block: $result"
           [ "$result" = "changed" ] || exit 0
