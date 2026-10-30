@@ -1,16 +1,14 @@
 # Keeps the "live trading on Bitget" block of the Tradester section up to date.
-# The bot on the Raspberry Pi commits its trade ledger (skills/bitget/data/trades.sqlite)
-# to the private Tradester repo every hour at :00. This job reads it twice a day
-# (00:20 and 12:20 UTC), rewrites the block in site/index.html and commits only when
-# a new trade has closed, so Render redeploys only then.
-# Needs two secrets: TRADING_REPO_CONNECT, a fine-grained token with read-only "Contents"
-# access to enginemazetrack/OpenClawster_Test, and LIVE_CAPITAL_USDT, the account
-# capital the returns are measured against (never stored in the repo).
+# The private trading repo publishes ./trades.sqlite here twice a day (only percentages,
+# no account amounts) with its own token; this repo holds no credential to it.
+# Whenever that file changes, this job rewrites the block in site/index.html and commits
+# only if the numbers changed, so Render redeploys only then.
 name: Live results
 
 on:
-  schedule:
-    - cron: "20 0,12 * * *"
+  push:
+    branches: [main]
+    paths: [trades.sqlite]
   workflow_dispatch:
 
 permissions:
@@ -24,31 +22,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download the trade ledger
-        env:
-          TOKEN: ${{ secrets.TRADING_REPO_CONNECT }}
-        run: |
-          set -euo pipefail
-          if [ -z "$TOKEN" ]; then
-            echo "::error::TRADING_REPO_CONNECT secret is missing"
-            exit 1
-          fi
-          curl -sSf --retry 3 --retry-all-errors \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Accept: application/vnd.github.raw" \
-            -o "$RUNNER_TEMP/trades.sqlite" \
-            "https://api.github.com/repos/enginemazetrack/OpenClawster_Test/contents/skills/bitget/data/trades.sqlite?ref=main"
-
       - name: Rewrite the block and commit if it changed
-        env:
-          LIVE_CAPITAL_USDT: ${{ secrets.LIVE_CAPITAL_USDT }}
         run: |
           set -euo pipefail
-          if [ -z "$LIVE_CAPITAL_USDT" ]; then
-            echo "::error::LIVE_CAPITAL_USDT secret is missing"
-            exit 1
-          fi
-          result=$(python3 live/update_live.py "$RUNNER_TEMP/trades.sqlite")
+          result=$(python3 live/update_live.py trades.sqlite)
           echo "Live block: $result"
           [ "$result" = "changed" ] || exit 0
           git config user.name "github-actions[bot]"

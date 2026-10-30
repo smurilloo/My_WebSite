@@ -7,10 +7,13 @@ services:
     buildCommand: echo "static site, no build step"
     staticPublishPath: ./site
     pullRequestPreviewsEnabled: false
-    # visit-counter backups (.github/workflows/visit-counter.yml) don't change the site
+    # visit-counter backups and the published trade ledger don't change the site by
+    # themselves; only the commit that rewrites site/index.html redeploys
     buildFilter:
       ignoredPaths:
         - counter/**
+        - trades.sqlite
+        - live/**
     headers:
       - path: /*
         name: X-Content-Type-Options
