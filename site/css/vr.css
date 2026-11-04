@@ -96,6 +96,15 @@ body.vr-open .mailpick { z-index: 208; }
 }
 .vr__hint.is-off { opacity: 0; transform: translateY(10px); }
 
+/* Movement hint: always fades 5 seconds after the room opens */
+.vr__walk {
+  position: absolute; left: 50%; top: calc(76px + env(safe-area-inset-top, 0px)); z-index: 3; transform: translateX(-50%); max-width: calc(100vw - 32px); width: max-content;
+  padding: 10px 18px; border: 1px solid rgba(124, 247, 212, 0.45); border-radius: 99px; background: rgba(5, 6, 10, 0.72); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: var(--fg, #eef0f6); font-size: 11px; text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.9s;
+}
+.vr.is-ready .vr__walk { opacity: 1; }
+.vr.is-ready .vr__walk.is-off { opacity: 0; }
+
 /* ---------- Touch / click feedback ---------- */
 .vr__ping { position: absolute; z-index: 2; width: 72px; height: 72px; margin: -36px 0 0 -36px; border-radius: 50%; pointer-events: none; border: 1.5px solid var(--accent, #7cf7d4); box-shadow: 0 0 18px rgba(124, 247, 212, 0.6), inset 0 0 12px rgba(124, 247, 212, 0.3); animation: vr-ping 0.8s var(--ease) both; }
 .vr__ping::after { content: ""; position: absolute; inset: 40%; border-radius: 50%; background: var(--accent, #7cf7d4); animation: vr-ping-dot 0.5s ease-out both; }

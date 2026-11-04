@@ -41,9 +41,12 @@ render.yaml                                  # Blueprint de Render
 
 ## Sala VR (opcional)
 
-El botón **VR** (abajo a la derecha) abre una sala virtual con las secciones del sitio en sus paredes, leídas del propio HTML
-(sigue el idioma y los datos en vivo). El orbe de la página cuelga del techo y cambia de forma y color según la pared; el suelo es
-un espejo en tiempo real. Se navega solo con mouse o pantalla táctil: arrastrar/deslizar para girar, rueda/pellizco para acercar,
-clic/toque en una pared o tarjeta para entrar.
+El botón **VR** (abajo a la derecha) abre una sala virtual leída del propio HTML (sigue el idioma y los datos en vivo). Los paneles
+son bloques 3D que salen de las paredes, el orbe de la página cuelga del techo y el suelo es un espejo en tiempo real. Al llegar a
+Trading las cifras cuentan, las velas de Bitget crecen como barras 3D y cada trade real cerrado se enciende como un punto de luz
+(`live/update_live.py` publica la lista en `data-trades`). La trayectoria es un camino de luz en el suelo con un hito por empleo.
+
+Mouse: arrastrar para girar, rueda para avanzar, clic para entrar, flechas o clic en el suelo para caminar. Táctil: deslizar en
+horizontal para girar y en vertical para caminar, pellizcar para avanzar, tocar para entrar o caminar hasta ese punto del suelo.
 
 Para quitarla: borrar `site/js/vr.js`, `site/css/vr.css` y las dos líneas marcadas `VR room` al final de `site/index.html`.
