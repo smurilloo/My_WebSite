@@ -1,0 +1,80 @@
+/* VR room add-on (optional). Remove together with js/vr.js and the two tags in index.html. */
+
+.vr-btn {
+  position: fixed; right: var(--gutter, 16px); bottom: 20px; z-index: 70;
+  display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px 12px 16px;
+  border: 1px solid rgba(124, 247, 212, 0.55); border-radius: 99px;
+  background: rgba(5, 6, 10, 0.72); color: var(--fg, #eef0f6);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 0 24px rgba(124, 247, 212, 0.18), inset 0 0 12px rgba(124, 247, 212, 0.08);
+  transition: background 0.4s, color 0.4s, box-shadow 0.4s, transform 0.4s;
+}
+.vr-btn svg { width: 22px; height: 22px; stroke: var(--accent, #7cf7d4); fill: none; stroke-width: 1.6; transition: stroke 0.4s; }
+.vr-btn:hover, .vr-btn:focus-visible {
+  background: var(--fg, #eef0f6); color: var(--bg, #05060a); outline: none; transform: translateY(-2px);
+  box-shadow: 0 0 34px rgba(124, 247, 212, 0.4);
+}
+.vr-btn:hover svg, .vr-btn:focus-visible svg { stroke: var(--bg, #05060a); }
+body.is-loading .vr-btn, body.vr-open .vr-btn, body.menu-open .vr-btn { opacity: 0; visibility: hidden; pointer-events: none; }
+.vr-btn { text-shadow: none; }
+
+body.vr-open { overflow: hidden; }
+.vr {
+  position: fixed; inset: 0; z-index: 200; background: #05060a; color: var(--fg, #eef0f6);
+  opacity: 0; visibility: hidden; transition: opacity 0.5s, visibility 0.5s;
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.vr.is-open { opacity: 1; visibility: visible; }
+.vr.is-drag { cursor: grabbing; }
+.vr.is-link { cursor: pointer; }
+.vr canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.vr::after { /* vignette */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(5, 6, 10, 0.55) 100%);
+}
+.vr * { cursor: inherit; }
+.vr button { cursor: pointer; }
+
+.vr__top { position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px var(--gutter, 16px); pointer-events: none; }
+.vr__top > * { pointer-events: auto; }
+.vr__title { color: var(--fg, #eef0f6); opacity: 0.9; }
+.vr__title b { color: var(--accent, #7cf7d4); font-weight: 400; }
+.vr__tools { display: flex; gap: 8px; }
+.vr__tool {
+  border: 1px solid rgba(238, 240, 246, 0.25); border-radius: 99px; padding: 9px 16px;
+  background: rgba(5, 6, 10, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: background 0.3s, color 0.3s, border-color 0.3s; text-shadow: none;
+}
+.vr__tool:hover, .vr__tool:focus-visible { background: var(--fg, #eef0f6); color: var(--bg, #05060a); border-color: var(--fg, #eef0f6); outline: none; }
+.vr__tool[aria-pressed="true"] { border-color: var(--accent, #7cf7d4); color: var(--accent, #7cf7d4); }
+.vr__tool[aria-pressed="true"]:hover { color: var(--bg, #05060a); }
+.vr__tool[hidden] { display: none; }
+
+.vr__nav {
+  position: absolute; left: 0; right: 0; bottom: 18px; z-index: 2; display: flex; justify-content: center; flex-wrap: wrap; gap: 6px;
+  padding: 0 var(--gutter, 16px); pointer-events: none;
+}
+.vr__nav button {
+  pointer-events: auto; border: 1px solid rgba(238, 240, 246, 0.2); border-radius: 99px; padding: 7px 12px;
+  background: rgba(5, 6, 10, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: var(--muted, #b6bbcd); font-size: 10px; transition: background 0.3s, color 0.3s, border-color 0.3s; text-shadow: none;
+}
+.vr__nav button:hover, .vr__nav button:focus-visible { color: var(--fg, #eef0f6); border-color: var(--fg, #eef0f6); outline: none; }
+.vr__nav button.is-on { color: var(--bg, #05060a); background: var(--accent, #7cf7d4); border-color: var(--accent, #7cf7d4); }
+.vr__hint {
+  position: absolute; left: 0; right: 0; bottom: 64px; z-index: 2; text-align: center; color: var(--muted, #b6bbcd); font-size: 11px;
+  padding: 0 var(--gutter, 16px); pointer-events: none; transition: opacity 1s;
+}
+.vr__hint.is-off { opacity: 0; }
+.vr__load { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; background: #05060a; color: var(--muted, #b6bbcd); transition: opacity 0.6s, visibility 0.6s; }
+.vr__load.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
+@media (max-width: 600px) {
+  .vr__title { display: none; }
+  .vr__top { justify-content: flex-end; }
+  .vr__tools { flex-wrap: wrap; justify-content: flex-end; }
+  .vr__tool { padding: 8px 12px; font-size: 11px; }
+  .vr__nav button { padding: 7px 9px; }
+  .vr__nav button span { display: none; }
+  .vr__hint { bottom: 58px; }
+}
+@media (prefers-reduced-motion: reduce) { .vr, .vr__load { transition-duration: 0.01ms; } }

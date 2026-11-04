@@ -33,6 +33,15 @@ site/
   js/scene.js   # escena WebGL (Three.js por CDN)
   js/main.js    # loader, cursor, reveals, menú, ticker, gráfico de velas en vivo
   js/i18n.js    # textos en inglés
+  js/vr.js      # sala VR opcional (botón "VR")
+  css/vr.css    # estilos de la sala VR
 Dockerfile, nginx.conf, docker-compose.yml   # ejecución local
 render.yaml                                  # Blueprint de Render
 ```
+
+## Sala VR (opcional)
+
+El botón **VR** (abajo a la derecha) abre una sala virtual con las secciones del sitio en sus paredes, leídas del propio HTML
+(sigue el idioma y los datos en vivo). Mouse: arrastrar para mirar, rueda para zoom. Celular: giroscopio o arrastrar, pellizcar para zoom.
+
+Para quitarla: borrar `site/js/vr.js`, `site/css/vr.css` y las dos líneas marcadas `VR room` al final de `site/index.html`.
