@@ -346,60 +346,56 @@ float snoise(vec3 v){
   return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
 }`;
 
-// Orb: a real displaced volume. Normals are rebuilt from the displaced surface in the vertex shader,
-// so the lumps catch light, cast a terminator and show highlights instead of reading as a flat disc.
+// Orb: same shape function and colour formula as the page background (js/scene.js). The one addition is the normal
+// rebuilt from the displaced surface, so the lumps keep their volume when seen from below inside the room.
 const ORB_VS = /* glsl */`
   uniform float uTime, uAmp, uFreq, uSpikes;
-  varying float vDisp; varying vec3 vN; varying vec3 vViewPos;
+  varying float vDisp; varying vec3 vN; varying vec3 vN0; varying vec3 vViewPos;
   ${NOISE}
   float disp(vec3 n){
     vec3 p = n * 1.6;
-    float a = snoise(p * uFreq * 0.7 + vec3(uTime * 0.25, uTime * 0.18, 0.0));
-    float ridge = 1.0 - abs(snoise(p * 2.2 + uTime * 0.4));
-    return (a * uAmp + pow(ridge, 6.0) * uSpikes * 0.6) / 1.6;
+    float a = snoise(p * uFreq + vec3(uTime * 0.25, uTime * 0.18, 0.0));
+    float ridge = 1.0 - abs(snoise(p * 3.0 + uTime * 0.4));
+    return a * uAmp + pow(ridge, 6.0) * uSpikes;
   }
   void main(){
     vec3 n = normalize(position);
     vec3 t = normalize(cross(n, abs(n.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
     vec3 b = cross(n, t);
-    const float e = 0.035;
+    const float e = 0.02;
     vec3 n1 = normalize(n + t * e), n2 = normalize(n + b * e);
     float d0 = disp(n);
-    vec3 p0 = n * (1.0 + d0);
-    vec3 p1 = n1 * (1.0 + disp(n1));
-    vec3 p2 = n2 * (1.0 + disp(n2));
+    vec3 p0 = n * (1.0 + d0 / 1.6);
+    vec3 p1 = n1 * (1.0 + disp(n1) / 1.6);
+    vec3 p2 = n2 * (1.0 + disp(n2) / 1.6);
     vec3 N = normalize(cross(p1 - p0, p2 - p0));
     if (dot(N, n) < 0.0) N = -N;
-    vDisp = d0 * 1.6;
+    vDisp = d0;
     vN = normalMatrix * N;
+    vN0 = normalMatrix * n;
     vec4 mv = modelViewMatrix * vec4(p0, 1.0);
     vViewPos = mv.xyz;
     gl_Position = projectionMatrix * mv;
   }`;
 const ORB_FS = /* glsl */`
   uniform vec3 uColA, uColB;
-  uniform float uTime, uBurst;
-  varying float vDisp; varying vec3 vN; varying vec3 vViewPos;
+  uniform float uTime, uBurst, uMirror;
+  varying float vDisp; varying vec3 vN; varying vec3 vN0; varying vec3 vViewPos;
   void main(){
-    vec3 N = normalize(vN), V = normalize(-vViewPos);
-    vec3 L = normalize(vec3(0.45, 0.35, 0.8));        // key light
-    vec3 L2 = normalize(vec3(-0.7, -0.5, 0.25));      // coloured fill bouncing off the mirror floor
-    vec3 H = normalize(L + V);
-    float diff = max(dot(N, L), 0.0);
-    float fill = max(dot(N, L2), 0.0);
-    float spec = pow(max(dot(N, H), 0.0), 110.0);
-    float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
-    float ao = mix(0.35, 1.0, smoothstep(-0.35, 0.25, vDisp));   // valleys sit in shadow
-    vec3 base = mix(uColB, uColA, smoothstep(-0.3, 0.45, vDisp));
-    vec3 col = base * (0.05 + diff * 1.05) * ao;
-    col += uColB * fill * 0.35 * ao;
-    col += vec3(1.0) * spec * 0.9 * ao;
-    col += mix(uColB, uColA, 0.5) * fres * 0.9;
-    float bands = smoothstep(0.92, 1.0, sin(vDisp * 40.0 + uTime) * 0.5 + 0.5) * 0.08;
-    col += uColA * bands * (0.4 + diff);
-    col += uColA * uBurst * (0.25 + fres);
-    gl_FragColor = vec4(col, 1.0);
-    #include <colorspace_fragment>
+    vec3 N = normalize(vN), N0 = normalize(vN0), V = normalize(-vViewPos);
+    float fresPage = pow(1.0 - max(dot(N0, V), 0.0), 2.5);
+    float fresLump = pow(1.0 - max(dot(N, V), 0.0), 2.5);
+    float fres = mix(fresPage, fresLump, 0.2);
+    vec3 col = mix(uColB, uColA, smoothstep(-0.3, 0.45, vDisp));
+    col = col * (0.18 + fres * 1.4);
+    // volume: soft directional light and shaded valleys, on top of the page's colours
+    float lit = 0.88 + 0.28 * max(dot(N, normalize(vec3(0.35, 0.3, 0.85))), 0.0);
+    col *= lit * mix(0.78, 1.0, smoothstep(-0.35, 0.2, vDisp));
+    float bands = smoothstep(0.92, 1.0, sin(vDisp * 40.0 + uTime) * 0.5 + 0.5) * 0.25;
+    col += bands * uColA;
+    col += uColA * uBurst * (0.12 + fres * 0.5);
+    // The page writes these values straight to the screen; the mirror pass stores linear light, so convert there only
+    gl_FragColor = vec4(uMirror > 0.5 ? pow(max(col, vec3(0.0)), vec3(2.2)) : col, 1.0);
   }`;
 
 const PANEL_VS = /* glsl */`
@@ -551,35 +547,45 @@ const floorFS = taps => /* glsl */`
   }`;
 
 const UV_VS = /* glsl */`varying vec2 vUv; varying vec3 vW; void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
+const SPACE = /* glsl */`
+  float h21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+  float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y); }
+  float fbm(vec2 p){ return vnoise(p) * 0.55 + vnoise(p * 2.1 + 3.7) * 0.3 + vnoise(p * 4.3 + 9.1) * 0.15; }
+  float stars(vec2 p, float time){
+    vec2 id = floor(p), f = fract(p) - 0.5;
+    float h = h21(id);
+    if (h < 0.93) return 0.0;
+    vec2 o = (vec2(h21(id + 3.1), h21(id + 7.7)) - 0.5) * 0.6;
+    float tw = 0.55 + 0.45 * sin(time * (0.5 + h * 2.0) + h * 40.0);
+    return smoothstep(0.1, 0.0, length(f - o)) * tw * (h - 0.9) * 8.0;
+  }`;
 const SHELL_FS = /* glsl */`
   uniform vec3 uColA, uColB; uniform float uTime;
   varying vec2 vUv;
-  float hash(float n){ return fract(sin(n * 91.345) * 47453.5); }
+  ${SPACE}
   void main(){
     float y = vUv.y;
-    vec3 col = mix(vec3(0.006, 0.007, 0.014), vec3(0.002, 0.0025, 0.005), smoothstep(0.0, 0.8, y));
-    col += uColB * exp(-y * 9.0) * 0.018 + uColA * pow(y, 4.0) * 0.012;
-    // data falling down the walls above the panels
-    float x = vUv.x * 192.0, id = floor(x), h = hash(id);
-    float lineMask = smoothstep(0.1, 0.0, abs(fract(x) - 0.5)) * step(0.55, h);
-    float drop = pow(fract(y * 1.3 + uTime * (0.03 + h * 0.08) + h * 9.0), 14.0);
-    col += mix(uColB, uColA, h) * lineMask * drop * smoothstep(0.55, 0.72, y) * 0.8;
+    vec3 col = vec3(0.0015, 0.0018, 0.0034);
+    vec2 sky = vec2(vUv.x * 16.0, y * 2.4);
+    float neb = fbm(sky + vec2(uTime * 0.006, 0.0));
+    col += mix(uColB, uColA, neb) * smoothstep(0.45, 0.85, neb) * 0.009;
+    col += vec3(0.8, 0.86, 1.0) * stars(vec2(vUv.x * 300.0, y * 62.0), uTime) * 0.35;
+    col += uColB * exp(-y * 10.0) * 0.012;
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }`;
 const CEIL_FS = /* glsl */`
   uniform vec3 uColA, uColB; uniform float uTime, uBurst;
   varying vec2 vUv;
+  ${SPACE}
   void main(){
-    vec2 p = vUv - 0.5; float r = length(p) * 2.0, an = atan(p.y, p.x);
-    vec3 glowCol = mix(uColA, uColB, smoothstep(0.0, 0.7, r));
-    vec3 col = vec3(0.0025, 0.003, 0.006) + glowCol * exp(-r * r * 5.0) * (0.06 + uBurst * 0.4);
-    float rings = smoothstep(0.012, 0.0, abs(fract(r * 7.0) - 0.5) / 7.0 * 2.0);
-    col += glowCol * rings * 0.025;
-    // two rings of segments turning in opposite directions around the orb's mount
-    float a1 = smoothstep(0.012, 0.0, abs(r - 0.36)) * step(0.0, sin(an * 8.0 + uTime * 0.5));
-    float a2 = smoothstep(0.008, 0.0, abs(r - 0.56)) * step(0.3, sin(an * 16.0 - uTime * 0.3));
-    col += uColA * a1 * 0.65 + uColB * a2 * 0.7;
+    vec2 p = vUv - 0.5; float r = length(p) * 2.0;
+    vec3 col = vec3(0.0015, 0.0018, 0.0034);
+    float neb = fbm(p * 5.0 + vec2(uTime * 0.005, -uTime * 0.004));
+    col += mix(uColB, uColA, neb) * smoothstep(0.4, 0.85, neb) * 0.014;
+    col += mix(uColA, uColB, r) * exp(-r * r * 6.0) * (0.012 + uBurst * 0.3);
+    col += vec3(0.8, 0.86, 1.0) * stars(vUv * 110.0, uTime) * 0.4;
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }`;
@@ -589,28 +595,49 @@ const BAR_FS = /* glsl */`
   void main(){
     float ph = fract(atan(vW.z, vW.x) * 0.637);
     float pulse = pow(fract(vUv.y * 1.2 - uTime * 0.22 + ph), 7.0);
-    gl_FragColor = vec4(mix(uColB, uColA, vUv.y) * (0.3 + pulse * 1.8), 1.0);
+    gl_FragColor = vec4(mix(uColB, uColA, vUv.y) * (0.05 + pulse * 0.55), 1.0);
     #include <colorspace_fragment>
   }`;
 const PTS_VS = /* glsl */`
-  uniform float uTime, uSize, uSpin;
-  attribute float aSeed;
-  varying float vA;
+  uniform float uTime, uSize, uSpin, uMax; uniform vec3 uOrb, uColA, uColB;
+  attribute float aSeed, aKind;
+  varying float vA; varying vec3 vC;
   void main(){
     vec3 p = position;
-    float a = uTime * (0.015 + aSeed * 0.035) + uSpin * (0.4 + aSeed);
-    p.xz = mat2(cos(a), -sin(a), sin(a), cos(a)) * p.xz;
-    p.y += sin(uTime * 0.3 + aSeed * 40.0) * 0.25;
+    float size, alpha;
+    if (aKind < 0.5) {            // distant stars: almost still, tiny, twinkling
+      float a = uTime * 0.002;
+      p.xz = mat2(cos(a), -sin(a), sin(a), cos(a)) * p.xz;
+      size = 0.5 + aSeed * 0.5;
+      alpha = (0.35 + 0.65 * abs(sin(uTime * (0.25 + aSeed * 0.9) + aSeed * 60.0))) * 0.9;
+      vC = mix(vec3(0.72, 0.8, 1.0), vec3(1.0, 0.93, 0.85), aSeed);
+    } else if (aKind < 1.5) {     // cosmic dust drifting through the room
+      float a = uTime * (0.006 + aSeed * 0.014) + uSpin * 0.2;
+      p.xz = mat2(cos(a), -sin(a), sin(a), cos(a)) * p.xz;
+      p.y += sin(uTime * 0.11 + aSeed * 40.0) * 0.35;
+      p.x += sin(uTime * 0.07 + aSeed * 21.0) * 0.3;
+      size = 0.6 + aSeed * 1.5;
+      alpha = (0.08 + 0.3 * fract(aSeed * 13.7 + uTime * 0.05)) * 0.8;
+      vC = mix(vec3(0.8, 0.85, 1.0), mix(uColA, uColB, aSeed), 0.6);
+    } else {                      // the page's particle field, orbiting the orb
+      float a = uTime * (0.03 + aSeed * 0.05) + uSpin * (0.4 + aSeed);
+      p.xz = mat2(cos(a), -sin(a), sin(a), cos(a)) * p.xz;
+      p += uOrb;
+      size = 0.5 + aSeed * 0.9;
+      alpha = 0.25 + 0.75 * fract(aSeed * 13.7 + uTime * 0.2);
+      vC = uColA;
+    }
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
-    gl_PointSize = uSize * (0.3 + aSeed) / -mv.z;
-    vA = 0.25 + 0.75 * fract(aSeed * 13.7 + uTime * 0.2);
+    gl_PointSize = min(uSize * size / -mv.z, uMax);
+    vA = alpha * smoothstep(0.5, 2.5, -mv.z);    // never a big blob right in front of the camera
     gl_Position = projectionMatrix * mv;
   }`;
 const PTS_FS = /* glsl */`
-  uniform vec3 uColA; varying float vA;
+  varying float vA; varying vec3 vC;
   void main(){
-    float a = smoothstep(0.5, 0.0, length(gl_PointCoord - 0.5));
-    gl_FragColor = vec4(uColA, a * vA * 0.75);
+    float d = length(gl_PointCoord - 0.5);
+    float a = smoothstep(0.5, 0.0, d); a *= a;
+    gl_FragColor = vec4(vC, a * vA);
     #include <colorspace_fragment>
   }`;
 
@@ -800,47 +827,66 @@ async function buildRoom() {
     const a = (k + 0.5) * STEP, b = new T.Mesh(barGeo, barMat);
     b.position.set(-Math.sin(a) * (R - 0.05), HEIGHT / 2, -Math.cos(a) * (R - 0.05)); scene.add(b);
   }
-  const edgeA = keep(new T.MeshBasicMaterial({ color: 0x7cf7d4, toneMapped: false }));
-  const edgeB = keep(new T.MeshBasicMaterial({ color: 0x8b7cff, toneMapped: false }));
+  const edgeA = keep(new T.MeshBasicMaterial({ color: 0x7cf7d4, toneMapped: false, transparent: true, opacity: 0.3 }));
+  const edgeB = keep(new T.MeshBasicMaterial({ color: 0x8b7cff, toneMapped: false, transparent: true, opacity: 0.22 }));
   const ringGeo = keep(new T.TorusGeometry(R - 0.03, 0.02, 6, N));
   [[0.02, edgeA], [HEIGHT - 0.02, edgeB]].forEach(([y, m]) => {
     const r = new T.Mesh(ringGeo, m); r.rotation.x = Math.PI / 2; r.rotation.z = Math.PI / N; r.position.y = y; scene.add(r);
   });
 
-  // --- the orb: a volume with its own light, plus rings and a wire shell around it for depth
-  const orbUniforms = { uTime: shared.uTime, uBurst: shared.uBurst, uColA: shared.uColA, uColB: shared.uColB, uAmp: { value: 0.35 }, uFreq: { value: 0.9 }, uSpikes: { value: 0 } };
+  // --- the orb, with the page's wire shell around it
+  const orbUniforms = { uTime: shared.uTime, uBurst: shared.uBurst, uColA: shared.uColA, uColB: shared.uColB, uAmp: { value: 0.35 }, uFreq: { value: 0.9 }, uSpikes: { value: 0 }, uMirror: { value: 0 } };
   const orbMat = shaderMat({ uniforms: orbUniforms, vertexShader: ORB_VS, fragmentShader: ORB_FS });
   const orb = new T.Group(); orb.position.set(0, ORB_Y, 0); scene.add(orb);
-  const orbHi = new T.Mesh(keep(small ? new T.SphereGeometry(1, 128, 96) : new T.SphereGeometry(1, 256, 180)), orbMat);
-  const orbLo = new T.Mesh(keep(new T.SphereGeometry(1, 48, 32)), orbMat); // used in the mirror pass
+  const orbHi = new T.Mesh(keep(small ? new T.SphereGeometry(1, 192, 128) : new T.SphereGeometry(1, 320, 220)), orbMat);
+  const orbLo = new T.Mesh(keep(new T.SphereGeometry(1, 64, 48)), orbMat); // used in the mirror pass
   orbLo.visible = false; orb.add(orbHi, orbLo);
-  const wire = new T.Mesh(keep(new T.IcosahedronGeometry(1.42, 2)), keep(new T.MeshBasicMaterial({ color: 0x8b7cff, wireframe: true, transparent: true, opacity: 0.1, depthWrite: false })));
+  const wire = new T.Mesh(keep(new T.IcosahedronGeometry(2.3 / 1.6, 2)), keep(new T.MeshBasicMaterial({ color: 0x8b7cff, wireframe: true, transparent: true, opacity: 0.08, depthWrite: false })));
   orb.add(wire);
-  const haloGeo = keep(new T.TorusGeometry(1.7, 0.008, 6, 96));
-  const halo1 = new T.Mesh(haloGeo, edgeA), halo2 = new T.Mesh(haloGeo, edgeB);
-  halo2.scale.setScalar(1.14); orb.add(halo1, halo2);
-  const glowTex = (() => {
+
+  // --- space: a thin haze of nebula clouds drifting through the room
+  const hazeTex = (() => {
     const c = el('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
-    const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-    gr.addColorStop(0, 'rgba(255,255,255,0.55)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.14)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 16; i++) {
+      const x = 28 + Math.random() * 72, y = 28 + Math.random() * 72, r = 16 + Math.random() * 30;
+      const gr = g.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, 'rgba(255,255,255,0.13)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    }
     return keep(new T.CanvasTexture(c));
   })();
-  const glowMat = keep(new T.SpriteMaterial({ map: glowTex, blending: T.AdditiveBlending, transparent: true, depthWrite: false, toneMapped: false }));
-  const glow = new T.Sprite(glowMat); glow.scale.setScalar(6.4); orb.add(glow);
+  const hazes = [];
+  for (let i = 0, n = small ? 4 : 8; i < n; i++) {
+    const m = keep(new T.SpriteMaterial({ map: hazeTex, blending: T.AdditiveBlending, transparent: true, depthWrite: false, toneMapped: false, rotation: Math.random() * TAU }));
+    const h = new T.Sprite(m), a = (i / n) * TAU, r = 3.2 + (i % 3) * 1.4;
+    h.position.set(Math.cos(a) * r, 3.4 + (i % 2) * 1.5, Math.sin(a) * r);
+    h.scale.setScalar(8 + (i % 3) * 2.5);
+    h.userData = { rate: (i % 2 ? 1 : -1) * (0.008 + i * 0.002), mix: i / Math.max(1, n - 1) };
+    scene.add(h); hazes.push(h);
+  }
 
-  // --- drifting particles
-  const PCOUNT = small ? 500 : 1400;
-  const ppos = new Float32Array(PCOUNT * 3), pseed = new Float32Array(PCOUNT);
+  // --- particles: far stars + drifting dust + the page's field around the orb
+  const PCOUNT = small ? 1400 : 3600;
+  const ppos = new Float32Array(PCOUNT * 3), pseed = new Float32Array(PCOUNT), pkind = new Float32Array(PCOUNT);
   for (let i = 0; i < PCOUNT; i++) {
-    const r = Math.sqrt(Math.random()) * (R - 1), th = Math.random() * TAU;
-    ppos[i * 3] = Math.cos(th) * r; ppos[i * 3 + 1] = 0.25 + Math.random() * (HEIGHT - 0.6); ppos[i * 3 + 2] = Math.sin(th) * r;
-    pseed[i] = Math.random();
+    // shuffled kinds, so lowering the draw range on slow devices thins all three evenly
+    const roll = Math.random(), kind = roll < 0.5 ? 0 : roll < 0.78 ? 1 : 2;
+    let x, y, z;
+    if (kind === 2) {
+      const r = 1.5 + Math.pow(Math.random(), 1.6) * 3.2, th = Math.random() * TAU, ph = Math.acos(2 * Math.random() - 1);
+      x = r * Math.sin(ph) * Math.cos(th); y = r * Math.sin(ph) * Math.sin(th) * 0.55; z = r * Math.cos(ph);
+    } else {
+      const r = kind ? Math.sqrt(Math.random()) * (R - 1) : (R - 1.2) * (0.6 + Math.random() * 0.4), th = Math.random() * TAU;
+      x = Math.cos(th) * r; y = (kind ? 0.2 : 4.35) + Math.random() * (HEIGHT - (kind ? 0.4 : 4.5)); z = Math.sin(th) * r;
+    }
+    ppos[i * 3] = x; ppos[i * 3 + 1] = y; ppos[i * 3 + 2] = z;
+    pseed[i] = Math.random(); pkind[i] = kind;
   }
   const pgeo = keep(new T.BufferGeometry());
   pgeo.setAttribute('position', new T.BufferAttribute(ppos, 3));
   pgeo.setAttribute('aSeed', new T.BufferAttribute(pseed, 1));
-  const pUni = { uTime: shared.uTime, uColA: shared.uColA, uSize: { value: 30 }, uSpin: { value: 0 } };
+  pgeo.setAttribute('aKind', new T.BufferAttribute(pkind, 1));
+  const pUni = { uTime: shared.uTime, uColA: shared.uColA, uColB: shared.uColB, uSize: { value: 30 }, uMax: { value: 12 }, uSpin: { value: 0 }, uOrb: { value: orb.position } };
   const particles = new T.Points(pgeo, shaderMat({ uniforms: pUni, vertexShader: PTS_VS, fragmentShader: PTS_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
   particles.frustumCulled = false; scene.add(particles);
 
@@ -867,9 +913,11 @@ async function buildRoom() {
     virt.updateMatrixWorld();
     texMat.set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
     texMat.multiply(virt.projectionMatrix).multiply(virt.matrixWorldInverse);
-    floor.visible = false; particles.visible = false; orbHi.visible = false; orbLo.visible = true; wire.visible = false;
+    floor.visible = false; particles.visible = false; orbHi.visible = false; orbLo.visible = true; wire.visible = false; orbUniforms.uMirror.value = 1;
+    hazes.forEach(h => { h.visible = false; });
     renderer.setRenderTarget(reflRT); renderer.clear(); renderer.render(scene, virt); renderer.setRenderTarget(null);
-    floor.visible = true; particles.visible = true; orbHi.visible = true; orbLo.visible = false; wire.visible = true;
+    floor.visible = true; particles.visible = true; orbHi.visible = true; orbLo.visible = false; wire.visible = true; orbUniforms.uMirror.value = 0;
+    hazes.forEach(h => { h.visible = true; });
   }
 
   // --- wall panels (text drawn on canvases from the live page)
@@ -1045,7 +1093,7 @@ async function buildRoom() {
     camera.aspect = w / h; camera.updateProjectionMatrix();
     const rh = Math.min(T0.refl, h * pr), rw = Math.round(rh * w / h);
     reflRT.setSize(rw, Math.round(rh));
-    pUni.uSize.value = 30 * pr;
+    pUni.uSize.value = 30 * pr; pUni.uMax.value = 7 * pr;
     pgeo.setDrawRange(0, Math.floor(PCOUNT * T0.pts));
   }
   const ro = new ResizeObserver(() => { applySize(); applyMode(); });
@@ -1283,10 +1331,8 @@ async function buildRoom() {
     orbHi.rotation.y = orbLo.rotation.y += dt * (0.12 + s.spin) * speed + (s.tYaw - s.yaw) * 0.02;
     wire.rotation.y -= dt * 0.05; wire.rotation.z += dt * 0.03;
     wire.material.color.copy(cur.b);
-    halo1.rotation.set(1.2 + Math.sin(time * 0.3) * 0.2, time * 0.22, 0);
-    halo2.rotation.set(1.9 + Math.cos(time * 0.26) * 0.25, -time * 0.17, 0.4);
     edgeA.color.copy(cur.a); edgeB.color.copy(cur.b);
-    glowMat.color.copy(cur.a).lerp(cur.b, 0.45).multiplyScalar(0.09 + shared.uBurst.value * 0.7);
+    hazes.forEach(h => { h.material.rotation += dt * h.userData.rate * speed; h.material.color.copy(cur.a).lerp(cur.b, h.userData.mix).multiplyScalar(0.012 + shared.uBurst.value * 0.05); });
     pUni.uSpin.value += dt * cur.flow * 0.35 * speed;
 
     // panels: staged reveal, focus, pointer glow, ripples
