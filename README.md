@@ -45,7 +45,7 @@ El botón **VR** (abajo a la derecha) abre una sala virtual leída del propio HT
 son bloques 3D que salen de las paredes, el orbe de la página cuelga del techo y el suelo es un espejo en tiempo real. Al llegar a
 Trading las cifras cuentan, las velas de Bitget crecen en 3D con el mismo aspecto de la web y se enciende un punto de luz por cada
 trade cerrado, a partir de los conteos por estrategia que ya muestra la página. Al seleccionar Experiencia profesional aparecen un camino de luz,
-una esfera numerada y un panel por empleo.
+una esfera verde nebulosa y un panel por empleo.
 
 Mouse: arrastrar para girar, rueda para avanzar, clic para entrar, flechas o clic en el suelo para caminar. Táctil: deslizar en
 horizontal para girar y en vertical para caminar, pellizcar para avanzar, tocar para entrar o caminar hasta ese punto del suelo. Doble clic o doble toque retrocede un nivel, igual que el botón Volver.

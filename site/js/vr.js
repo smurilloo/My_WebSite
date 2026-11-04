@@ -267,7 +267,7 @@ const WALLS = [
     zones.push({ x: d.x, y: d.y, w: d.w, h: d.h, d: DEPTH });
   },
 
-  // Selecting this wall brings up the jobs: a path of light with numbered spheres and one standing plate each (see buildRoom)
+  // Selecting this wall brings up the jobs: a path of light with nebula spheres and one standing plate each (see buildRoom)
   function experience(g) {
     mono(g, '03', 90, 90, 200, { size: 26, color: C.accent });
     const title = $$('#experience .section__title .split').map(txt).join(' ');
@@ -617,30 +617,41 @@ const LIGHTS_FS = /* glsl */`
     #include <colorspace_fragment>
   }`;
 
-// Career milestones: small spheres in the orb's material with their number always facing the viewer
+// Career milestones: small spheres of slowly drifting green nebula, in a domain-warped noise that is cheap at this size
 const MILE_VS = /* glsl */`
-  varying vec3 vN, vV, vCenter;
+  varying vec3 vN, vV, vP;
   void main(){
     vN = normalMatrix * normal;
-    vCenter = -(modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    vP = normal;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     vV = -mv.xyz;
     gl_Position = projectionMatrix * mv;
   }`;
 const MILE_FS = /* glsl */`
-  uniform sampler2D uNum;
-  uniform vec3 uColA, uColB;
-  uniform float uOn, uMirror;
-  varying vec3 vN, vV, vCenter;
+  uniform float uOn, uMirror, uTime, uSeed;
+  varying vec3 vN, vV, vP;
+  float h31(vec3 p){ p = fract(p * 0.3183099 + 0.1) * 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+  float n3(vec3 p){
+    vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(h31(i), h31(i + vec3(1.0, 0.0, 0.0)), f.x), mix(h31(i + vec3(0.0, 1.0, 0.0)), h31(i + vec3(1.0, 1.0, 0.0)), f.x), f.y),
+               mix(mix(h31(i + vec3(0.0, 0.0, 1.0)), h31(i + vec3(1.0, 0.0, 1.0)), f.x), mix(h31(i + vec3(0.0, 1.0, 1.0)), h31(i + vec3(1.0)), f.x), f.y), f.z);
+  }
+  float fbm(vec3 p){ return n3(p) * 0.64 + n3(p * 2.03 + 3.1) * 0.27 + n3(p * 4.01 + 7.7) * 0.09; }
   void main(){
     vec3 N = normalize(vN), V = normalize(vV);
     float fres = pow(1.0 - max(dot(N, V), 0.0), 2.5);
     vec3 L = normalize(vec3(0.35, 0.55, 0.75));
     float diff = max(dot(N, L), 0.0);
-    vec3 col = mix(uColB, uColA, 0.5 + 0.5 * N.y) * (0.2 + diff * 0.45 + fres * 1.3) * (1.0 + uOn * 0.6);
-    col += vec3(1.0) * pow(max(dot(N, normalize(L + V)), 0.0), 70.0) * 0.55;
-    vec3 fwd = normalize(vCenter), rgt = normalize(cross(vec3(0.0, 1.0, 0.0), fwd)), upv = cross(fwd, rgt);
-    col = mix(col, vec3(1.0), texture2D(uNum, vec2(dot(N, rgt), dot(N, upv)) * 0.62 + 0.5).a);
+    vec3 p = normalize(vP) * 1.35 + uSeed;
+    float t = uTime * 0.09;
+    vec2 warp = vec2(fbm(p + t), fbm(p + 5.2 - t));
+    float neb = smoothstep(0.24, 0.78, fbm(p + vec3(warp, warp.x - warp.y) * 1.25));
+    vec3 col = mix(vec3(0.015, 0.14, 0.11), vec3(0.05, 0.46, 0.34), neb);   // deep emerald into jade
+    col = mix(col, vec3(0.45, 1.0, 0.74), neb * neb * neb * 0.6);            // bright mint where the gas is densest
+    col *= 0.6 + diff * 0.55;
+    col += vec3(0.2, 0.92, 0.62) * fres * 1.05;                              // soft glowing rim
+    col *= 1.0 + uOn * 0.6;
+    col += vec3(0.8, 1.0, 0.9) * pow(max(dot(N, normalize(L + V)), 0.0), 70.0) * 0.45;
     gl_FragColor = vec4(uMirror > 0.5 ? pow(max(col, vec3(0.0)), vec3(2.2)) : col, 1.0);
   }`;
 
@@ -715,7 +726,7 @@ const floorFS = taps => /* glsl */`
     col += mix(uColB, uColA, pang / uArcMax * 0.5 + 0.5) * (exp(-plat * plat * 260.0) * (0.5 + pflow * 1.4) + exp(-plat * plat * 16.0) * 0.05 * (0.4 + pflow)) * pmask * uPathOn;
     for (int i = 0; i < 5; i++) {     // soft pool of light under each sphere
       float md = length(vW.xz - uMiles[i].xy);
-      col += uColA * exp(-md * md * 9.0) * (0.05 + uMiles[i].z * 0.16) * uPathOn;
+      col += vec3(0.12, 0.85, 0.58) * exp(-md * md * 9.0) * (0.05 + uMiles[i].z * 0.16) * uPathOn;
     }
     }
     gl_FragColor = vec4(col, 1.0);
@@ -1323,7 +1334,7 @@ async function buildRoom() {
   paintTicker();
   const tickTimer = setInterval(paintTicker, 2000);
 
-  // --- career: one standing plate and one numbered sphere per job, oldest first. layoutCareer() places them so that
+  // --- career: one standing plate and one nebula sphere per job, oldest first. layoutCareer() places them so that
   // all of them can be seen at once from where the camera stands when facing this wall.
   const pa = -WALL_PATH * STEP;
   const axis = new T.Vector2(-Math.sin(pa), -Math.cos(pa)), right = new T.Vector2(-axis.y, axis.x);
@@ -1348,11 +1359,7 @@ async function buildRoom() {
     scene.add(mesh); plates.push(mesh);
     renderer.initTexture(tex);
     c.width = c.height = 1;                  // uploaded: the GPU copy is all that is needed
-    const nc = el('canvas'); nc.width = nc.height = 128;
-    const ng = nc.getContext('2d'); ng.font = `500 92px ${SANS}`; ng.textAlign = 'center'; ng.textBaseline = 'middle'; ng.fillStyle = '#fff'; ng.fillText(String(i + 1), 64, 68);
-    const nt = keep(new T.CanvasTexture(nc));
-    renderer.initTexture(nt);
-    const ball = new T.Mesh(sphereGeo, shaderMat({ uniforms: { uNum: { value: nt }, uColA: shared.uColA, uColB: shared.uColB, uOn: { value: 0 }, uMirror: orbUniforms.uMirror }, vertexShader: MILE_VS, fragmentShader: MILE_FS }));
+    const ball = new T.Mesh(sphereGeo, shaderMat({ uniforms: { uTime: shared.uTime, uSeed: { value: i * 3.7 }, uOn: { value: 0 }, uMirror: orbUniforms.uMirror }, vertexShader: MILE_VS, fragmentShader: MILE_FS }));
     ball.userData.phase = i * 1.3;
     scene.add(ball); spheres.push(ball);
   });
