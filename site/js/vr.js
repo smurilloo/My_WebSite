@@ -617,7 +617,7 @@ const LIGHTS_FS = /* glsl */`
     #include <colorspace_fragment>
   }`;
 
-// Career milestones: balls of green gas. The mesh is only a bounding shell: each pixel marches its ray through the real
+// Career milestones: balls of gas in the orb's live palette. The mesh is only a bounding shell: each pixel marches its ray through the real
 // volume, so there is no surface and no hard edge, just density thinning out from a bright core. Motes drift around it.
 const MILE_VS = /* glsl */`
   varying vec3 vW, vC; varying float vR;
@@ -629,6 +629,7 @@ const MILE_VS = /* glsl */`
     gl_Position = projectionMatrix * viewMatrix * w;
   }`;
 const mileFS = steps => /* glsl */`
+  uniform vec3 uColA, uColB;
   uniform float uOn, uMirror, uTime, uSeed;
   varying vec3 vW, vC; varying float vR;
   float h31(vec3 p){ p = fract(p * 0.3183099 + 0.1) * 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -656,8 +657,8 @@ const mileFS = steps => /* glsl */`
       float n = n3(q) * 0.6 + n3(q * 2.3 + 4.7) * 0.4;
       float dens = smoothstep(0.0, 0.75, 1.0 - r + (n - 0.5) * 0.42);   // noise eats into the edge: wisps, not a rim
       if (dens <= 0.0) continue;
-      vec3 c = mix(vec3(0.02, 0.42, 0.5), vec3(0.05, 0.8, 0.5), smoothstep(0.92, 0.45, r));   // teal haze into jade
-      c = mix(c, vec3(0.8, 1.0, 0.86), smoothstep(0.55, 0.08, r));                                // luminous mint core
+      vec3 c = mix(uColB, uColA, smoothstep(0.88, 0.32, r));                                     // the orb's two colours, edge to centre
+      c = mix(c, mix(uColA, vec3(1.0), 0.6), smoothstep(0.42, 0.04, r));                         // luminous core
       c *= 0.9 + p.y * 0.35;                                                                      // lit from above
       float a = 1.0 - exp(-dens * dt * 3.6);
       acc += T * a * c;
@@ -670,7 +671,7 @@ const mileFS = steps => /* glsl */`
     gl_FragColor = vec4(acc, A);
   }`;
 const MOTE_VS = /* glsl */`
-  uniform float uTime, uSeed, uSize, uMax, uOn;
+  uniform float uTime, uSeed, uSize, uMax, uOn; uniform vec3 uColA, uColB;
   attribute float aSeed;
   varying float vA; varying vec3 vC;
   void main(){
@@ -681,7 +682,7 @@ const MOTE_VS = /* glsl */`
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_PointSize = min(uSize * 0.42 * (0.45 + aSeed * 1.05) * length(modelMatrix[0].xyz) / -mv.z, uMax);
     vA = (0.25 + 0.75 * abs(sin(uTime * (0.4 + aSeed) + aSeed * 60.0))) * (0.75 + uOn * 0.25) * smoothstep(0.3, 1.2, -mv.z);
-    vC = mix(vec3(0.3, 0.95, 0.72), vec3(0.85, 1.0, 0.92), aSeed * aSeed);
+    vC = mix(mix(uColB, vec3(1.0), 0.25), mix(uColA, vec3(1.0), 0.45), aSeed);
     gl_Position = projectionMatrix * mv;
   }`;
 const MOTE_FS = /* glsl */`
@@ -762,7 +763,7 @@ const floorFS = taps => /* glsl */`
     col += mix(uColB, uColA, pang / uArcMax * 0.5 + 0.5) * (exp(-plat * plat * 260.0) * (0.5 + pflow * 1.4) + exp(-plat * plat * 16.0) * 0.05 * (0.4 + pflow)) * pmask * uPathOn;
     for (int i = 0; i < 5; i++) {     // soft pool of light under each sphere
       float md = length(vW.xz - uMiles[i].xy);
-      col += vec3(0.12, 0.85, 0.58) * exp(-md * md * 9.0) * (0.05 + uMiles[i].z * 0.16) * uPathOn;
+      col += uColA * exp(-md * md * 9.0) * (0.05 + uMiles[i].z * 0.16) * uPathOn;
     }
     }
     gl_FragColor = vec4(col, 1.0);
@@ -1404,8 +1405,8 @@ async function buildRoom() {
     renderer.initTexture(tex);
     c.width = c.height = 1;                  // uploaded: the GPU copy is all that is needed
     const seed = { value: i * 3.7 }, on = { value: 0 };
-    const ball = new T.Mesh(sphereGeo, shaderMat({ uniforms: { uTime: shared.uTime, uSeed: seed, uOn: on, uMirror: orbUniforms.uMirror }, vertexShader: MILE_VS, fragmentShader: mileFS(small ? 5 : 8), transparent: true, premultipliedAlpha: true, depthWrite: false, side: T.BackSide }));
-    const mote = new T.Points(moteGeo, shaderMat({ uniforms: { uTime: shared.uTime, uSeed: seed, uOn: on, uSize: pUni.uSize, uMax: pUni.uMax }, vertexShader: MOTE_VS, fragmentShader: MOTE_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
+    const ball = new T.Mesh(sphereGeo, shaderMat({ uniforms: { uTime: shared.uTime, uSeed: seed, uOn: on, uColA: shared.uColA, uColB: shared.uColB, uMirror: orbUniforms.uMirror }, vertexShader: MILE_VS, fragmentShader: mileFS(small ? 5 : 8), transparent: true, premultipliedAlpha: true, depthWrite: false, side: T.BackSide }));
+    const mote = new T.Points(moteGeo, shaderMat({ uniforms: { uTime: shared.uTime, uSeed: seed, uOn: on, uColA: shared.uColA, uColB: shared.uColB, uSize: pUni.uSize, uMax: pUni.uMax }, vertexShader: MOTE_VS, fragmentShader: MOTE_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
     mote.frustumCulled = false; mote.renderOrder = 1; ball.add(mote); motes.push(mote);
     ball.userData.phase = i * 1.3;
     scene.add(ball); spheres.push(ball);
