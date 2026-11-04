@@ -119,9 +119,11 @@ body.vr-open .mailpick { z-index: 208; }
 .vr__bar span { display: block; height: 100%; width: 100%; background: var(--accent, #7cf7d4); transform: scaleX(0); transform-origin: left; transition: transform 0.3s linear; }
 .vr__msg { color: var(--muted, #b6bbcd); }
 
-@media (max-width: 700px) {
+@media (max-width: 1180px) {
   .vr__nav button { padding: 8px 9px; }
   .vr__nav button span { display: none; }
+}
+@media (max-width: 700px) {
   .vr__title { font-size: 11px; }
   .vr__tool { padding: 9px 13px; font-size: 11px; }
   .vr__hint { font-size: 10px; }

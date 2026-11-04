@@ -20,9 +20,9 @@ const UI = {
     loading: 'Construyendo la sala', fail: 'No se pudo iniciar WebGL en este dispositivo.',
     hintDesk: 'Arrastra para girar · clic en una pared o tarjeta para entrar · doble clic para volver',
     hintTouch: 'Desliza para girar · toca una pared o tarjeta para entrar · doble toque para volver',
-    walls: ['Inicio', 'Servicios', 'Trading', 'Estrategias', 'Pipeline', 'Trayectoria', 'Formación', 'Stack', 'Contacto'],
+    walls: ['Inicio', 'Servicios', 'Trading', 'Estrategias', 'Pipeline', 'Experiencia profesional', 'Formación', 'Stack', 'Contacto'],
     walkDesk: 'También puedes desplazarte con las flechas del teclado', walkTouch: 'Con el panel táctil te puedes desplazar libremente',
-    pathHint: 'Sigue el camino de luz en el suelo: cada hito es una etapa de mi carrera.',
+    pathHint: 'Selecciona este panel para recorrer mi carrera paso a paso.',
     pipeline: 'Cómo opera', strategies: 'Estrategias', education: 'Formación',
     wait: 'Cargando datos de Bitget…', down: 'Datos de Bitget no disponibles, reintentando…', view: 'ver', drag: 'girar',
   },
@@ -31,9 +31,9 @@ const UI = {
     loading: 'Building the room', fail: 'WebGL could not start on this device.',
     hintDesk: 'Drag to turn · click a wall or card to step in · double-click to go back',
     hintTouch: 'Swipe to turn · tap a wall or card to step in · double-tap to go back',
-    walls: ['Home', 'Services', 'Trading', 'Strategies', 'Pipeline', 'Experience', 'Education', 'Stack', 'Contact'],
+    walls: ['Home', 'Services', 'Trading', 'Strategies', 'Pipeline', 'Professional Experience', 'Education', 'Stack', 'Contact'],
     walkDesk: 'You can also move around with the arrow keys', walkTouch: 'Use the touch panel to move around freely',
-    pathHint: 'Follow the path of light on the floor: each milestone is a stage of my career.',
+    pathHint: 'Select this panel to walk through my career step by step.',
     pipeline: 'How it runs', strategies: 'Strategies', education: 'Education',
     wait: 'Loading Bitget data…', down: 'Bitget data unavailable, retrying…', view: 'view', drag: 'turn',
   },
@@ -138,8 +138,8 @@ function frame(g) { // outer wall panel
 
 // ---------- Wall painters (read the live text of the page) ----------
 // Every piece of information lives in exactly one place. `zones` collects what can be clicked (the camera moves in to
-// that rectangle, or follows `href`). A zone with `d` is built as a real block standing `d` metres out of the panel;
-// `passive` zones are blocks only. `count` collects the numbers that count up on arrival.
+// that rectangle, or follows `href`). A zone with `d` rises `d` metres out of the panel, only while hovered, touched or
+// selected; at rest it is flush with the panel. `count` collects the numbers that count up on arrival.
 const CARD = { w: 640, h: 450, gx: 33, gy: 22, x: 70, y: 290 };
 const DEPTH = 0.14;
 const cell = i => ({ x: CARD.x + (i % 3) * (CARD.w + CARD.gx), y: CARD.y + Math.floor(i / 3) * (CARD.h + CARD.gy), w: CARD.w, h: CARD.h });
@@ -197,7 +197,7 @@ const WALLS = [
     glass(g, cx, cy, cw, chh);
     mono(g, txt($('.chart__head span')), cx + 24, cy + 18, 640, { size: 19, color: C.muted });
     mono(g, 'LIVE', cx + cw - 24 - 120, cy + 18, 120, { size: 19, color: C.up, align: 'right' });
-    zones.push({ x: cx, y: cy, w: cw, h: chh, d: 0.1, noLift: true });
+    zones.push({ x: cx, y: cy, w: cw, h: chh });
     const sw = 455, sh = 242;
     $$('#trading .stat').slice(0, 4).forEach((s, i) => {
       const x = cx + (i % 2) * (sw + 20), y = cy + chh + 18 + Math.floor(i / 2) * (sh + 16);
@@ -209,7 +209,6 @@ const WALLS = [
     const { x: rx, w: rw } = REAL;
     const rh = $('.real__head');
     glass(g, rx, REAL.y, rw, REAL.h, 18, 'rgba(8,10,20,0.78)', 'rgba(62,240,168,0.35)');
-    zones.push({ x: rx, y: REAL.y, w: rw, h: REAL.h, d: 0.08, passive: true });
     const hs = rh ? $$(':scope > span', rh) : [];
     mono(g, txt(hs[0]), rx + 28, 318, rw - 56, { size: 22, color: C.up });
     text(g, txt(hs[1]), rx + 28, 354, rw - 56, { size: 21, min: 16, color: C.muted, maxH: 54 });
@@ -269,11 +268,11 @@ const WALLS = [
     zones.push({ x: d.x, y: d.y, w: d.w, h: d.h, d: DEPTH });
   },
 
-  // The jobs themselves stand along the path of light on the floor (see buildRoom); this wall is where the path arrives
+  // Selecting this wall brings up the jobs: a path of light with numbered spheres and one standing plate each (see buildRoom)
   function experience(g) {
     mono(g, '03', 90, 90, 200, { size: 26, color: C.accent });
-    const title = txt($('#experience .section__title'));
-    g.font = `500 170px ${SANS}`; if ('letterSpacing' in g) g.letterSpacing = '-8px';
+    const title = $$('#experience .section__title .split').map(txt).join(' ');
+    g.font = `500 150px ${SANS}`; if ('letterSpacing' in g) g.letterSpacing = '-7px';
     g.textBaseline = 'top'; g.textAlign = 'left'; g.fillStyle = C.fg;
     g.save(); g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 8; g.fillText(title, 84, 120); g.restore();
     const dates = jobEls().map(j => txt($('.job__date', j)));
@@ -303,7 +302,7 @@ const WALLS = [
     let y = 300;
     $$('#stack .marquee__row').forEach((r, i) => {
       const t = txt($('span', r)).replace(/[ ·]+$/, '');
-      const h = text(g, t, 70, y, TW - 140, { size: 84, min: 56, weight: 500, lh: 1.12, maxH: 300, spacing: -2, color: i ? C.a2 : C.fg });
+      const h = text(g, t, 70, y, TW - 140, { size: 84, min: 56, weight: 500, lh: 1.12, maxH: 300, spacing: -2, color: C.fg });
       zones.push({ x: 60, y: y - 6, w: TW - 120, h: h + 12 });
       y += h + 56;
     });
@@ -447,7 +446,7 @@ const ORB_FS = /* glsl */`
 // Panels are real geometry: a slab coming out of the wall with cards standing out of it. Every vertex keeps the wall
 // uv of the spot it sits on, so ripples, pointer bulge and lift move fronts and sides together without cracks.
 const PANEL_VS = /* glsl */`
-  uniform float uHover, uLiftAmt, uAsp;
+  uniform float uHover, uLiftAmt, uLiftH, uAsp, uFlex;
   uniform vec2 uPtr; uniform vec3 uRip; uniform vec4 uLift;
   attribute float aKind, aH, aLiftable;
   varying vec2 vUv; varying float vKind, vH;
@@ -457,11 +456,11 @@ const PANEL_VS = /* glsl */`
     vec2 asp = vec2(uAsp, 1.0);
     if (uRip.z >= 0.0 && uRip.z < 2.0) {                    // physical ripple where it was touched
       float d = length((uv - uRip.xy) * asp), r = uRip.z * 1.1;
-      p.z += sin((d - r) * 22.0) * exp(-pow((d - r) * 5.0, 2.0)) * (1.0 - uRip.z / 2.0) * 0.09 * aH;
+      p.z += sin((d - r) * 22.0) * exp(-pow((d - r) * 5.0, 2.0)) * (1.0 - uRip.z / 2.0) * 0.09 * aH * uFlex;
     }
     float pd = length((uv - uPtr) * asp);
-    p.z += exp(-pd * pd * 14.0) * uHover * 0.05 * aH;        // bulges toward the pointer
-    if (aLiftable > 0.5 && uv.x >= uLift.x - 0.001 && uv.x <= uLift.z + 0.001 && uv.y >= uLift.y - 0.001 && uv.y <= uLift.w + 0.001) p.z += uLiftAmt * 0.16;
+    p.z += exp(-pd * pd * 14.0) * uHover * 0.05 * aH * uFlex;        // bulges toward the pointer
+    if (aLiftable > 0.5 && uv.x >= uLift.x - 0.001 && uv.x <= uLift.z + 0.001 && uv.y >= uLift.y - 0.001 && uv.y <= uLift.w + 0.001) p.z += uLiftAmt * uLiftH;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   }`;
 const PANEL_FS = /* glsl */`
@@ -473,7 +472,7 @@ const PANEL_FS = /* glsl */`
   varying vec2 vUv; varying float vKind, vH;
   void main(){
     if (vKind > 1.5) {                                        // edges: light gathers at the front and fades into the wall
-      vec3 side = vec3(0.004, 0.005, 0.01) + mix(uColB, uColA, vH) * (0.012 + pow(vH, 5.0) * 0.5);
+      vec3 side = vec3(0.004, 0.005, 0.01) + mix(uColB, uColA, vH) * (0.008 + pow(vH, 6.0) * 0.16);
       gl_FragColor = vec4(side * mix(0.45, 1.0, uFocus), 1.0);
       #include <colorspace_fragment>
       return;
@@ -495,10 +494,9 @@ const PANEL_FS = /* glsl */`
     }
     if (uNumOn > 0.5) { vec4 n = texture2D(uNum, vUv); tex.rgb = mix(tex.rgb, n.rgb, n.a); tex.a = max(tex.a, n.a); }
     vec3 col = mix(vec3(0.002, 0.0026, 0.0055), tex.rgb, tex.a) * mix(0.4, 1.0, uFocus);
-    if (vKind > 0.5) col += vec3(0.0012, 0.0015, 0.0026);        // cards catch a little more light than the slab
     // pointer glow, same idea as the page's service cards
     float pd = length((vUv - uPtr) * asp);
-    col += uColA * exp(-pd * pd * 26.0) * uHover * 0.035;
+    col += uColA * exp(-pd * pd * 26.0) * uHover * 0.012;
     // hovered / selected card outline
     if (uZoneAmt > 0.001) {
       vec2 c = (uZone.xy + uZone.zw) * 0.5, h = abs(uZone.zw - uZone.xy) * 0.5;
@@ -506,12 +504,12 @@ const PANEL_FS = /* glsl */`
       float border = smoothstep(0.005, 0.0, abs(sd));
       float fill = smoothstep(0.003, -0.003, sd);
       float halo = exp(-max(sd, 0.0) * 60.0) * (1.0 - fill);
-      col += uColA * (border * 0.7 + fill * 0.012 + halo * 0.05) * uZoneAmt;
+      col += uColA * (border * 0.6 + fill * 0.003 + halo * 0.03) * uZoneAmt;
     }
     float sx = (vUv.x + vUv.y * 0.35) / 1.35;
     if (uSheen < 1.0) { float s1 = exp(-pow((sx - (uSheen * 1.6 - 0.3)) * 12.0, 2.0)); col += mix(uColA, vec3(1.0), 0.3) * s1 * 0.4; }
     float idle = fract(uTime * 0.045 + uPhase * 0.31);
-    col += uColA * exp(-pow((sx - (idle * 3.0 - 1.0)) * 26.0, 2.0)) * 0.012;
+    col += uColA * exp(-pow((sx - (idle * 3.0 - 1.0)) * 26.0, 2.0)) * 0.005;
     if (uRip.z >= 0.0 && uRip.z < 2.0) {                      // touch ring
       float d = length((vUv - uRip.xy) * asp), r = uRip.z * 1.1;
       col += uColA * exp(-pow((d - r) * 30.0, 2.0)) * (1.0 - uRip.z / 2.0) * 0.7;
@@ -520,28 +518,68 @@ const PANEL_FS = /* glsl */`
     #include <colorspace_fragment>
   }`;
 
-// BTC candles: the page's slim candles and hairline wicks in its exact flat colours, with just enough thickness to stand
-// out of the wall. The face you look at is the page's colour; only the thin sides are shaded.
-const BARS_VS = /* glsl */`
+// BTC candles: tubes of glass and light in the orb's visual language, a dark core with a luminous rim. The tube's
+// length comes from the shader, so the rounded ends never stretch however tall the candle is.
+const CANDLE_VS = /* glsl */`
   uniform float uGrow, uCount;
-  attribute vec3 aBarColor;
-  varying vec3 vC; varying float vG, vFace;
+  attribute vec4 aC;            // x, y, half length, radius
+  attribute vec3 aColor;
+  varying vec3 vN, vV, vC; varying float vG, vLocal, vLast, vId;
   void main(){
-    float g = clamp(uGrow * (uCount + 10.0) - float(gl_InstanceID), 0.0, 1.0);
+    float id = float(gl_InstanceID);
+    float g = clamp(uGrow * (uCount + 8.0) - id, 0.0, 1.0);
     g = 1.0 - pow(1.0 - g, 3.0);
-    vG = g;
-    vec3 p = position;
-    p.y *= g; p.z *= g;
-    vC = aBarColor;
-    vFace = abs(normal.z);
-    gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.0);
+    float half_ = aC.z * g, r = aC.w * min(1.0, g * 3.0);
+    vec3 n = normalize(position);
+    vec3 p = n * r;
+    p.y += sign(n.y) * half_;
+    vLocal = p.y / (half_ + r + 0.0001);
+    p.xy += aC.xy;
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    vN = normalMatrix * n; vV = -mv.xyz; vC = aColor; vG = g; vId = id;
+    vLast = id > uCount - 1.5 ? 1.0 : 0.0;
+    gl_Position = projectionMatrix * mv;
   }`;
-const BARS_FS = /* glsl */`
-  uniform float uFocus;
-  varying vec3 vC; varying float vG, vFace;
+const CANDLE_FS = /* glsl */`
+  uniform float uTime, uFocus, uWick;
+  varying vec3 vN, vV, vC; varying float vG, vLocal, vLast, vId;
   void main(){
     if (vG < 0.01) discard;
-    gl_FragColor = vec4(vC * mix(0.42, 1.0, vFace) * mix(0.4, 1.0, uFocus), 1.0);
+    vec3 N = normalize(vN), V = normalize(vV);
+    float nv = max(dot(N, V), 0.0);
+    vec3 col;
+    if (uWick > 0.5) col = vC * 0.85;                          // wicks are filaments of light
+    else {
+      float fres = pow(1.0 - nv, 2.2);
+      col = vC * (0.16 + fres * 1.5);                          // glass: dark core, bright rim
+      col += vC * pow(0.5 + 0.5 * sin(vLocal * 5.0 - uTime * 1.6 + vId * 0.7), 10.0) * 0.5;   // energy running through it
+      vec3 H = normalize(normalize(vec3(0.3, 0.6, 0.75)) + V);
+      col += vec3(1.0) * pow(max(dot(N, H), 0.0), 90.0) * 0.8;
+    }
+    col *= 1.0 + vLast * (0.5 + 0.5 * sin(uTime * 3.2)) * 0.9;  // the live candle breathes
+    gl_FragColor = vec4(col * mix(0.4, 1.0, uFocus), 1.0);
+    #include <colorspace_fragment>
+  }`;
+// Soft light each candle throws on the chart behind it
+const HALO_VS = /* glsl */`
+  uniform float uGrow, uCount;
+  attribute vec4 aC;
+  attribute vec3 aColor;
+  varying vec2 vQ; varying vec3 vC; varying float vG;
+  void main(){
+    float g = clamp(uGrow * (uCount + 8.0) - float(gl_InstanceID), 0.0, 1.0);
+    vec2 size = vec2(aC.w * 3.4, aC.z * g + aC.w * 3.4);
+    vQ = position.xy * vec2(1.0, 1.0);
+    vec3 p = vec3(position.xy * size + aC.xy, -0.045);
+    vC = aColor; vG = g;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  }`;
+const HALO_FS = /* glsl */`
+  uniform float uFocus;
+  varying vec2 vQ; varying vec3 vC; varying float vG;
+  void main(){
+    float a = pow(max(1.0 - vQ.x * vQ.x, 0.0), 2.0) * pow(max(1.0 - vQ.y * vQ.y, 0.0), 1.5);
+    gl_FragColor = vec4(vC, a * 0.2 * vG * mix(0.4, 1.0, uFocus));
     #include <colorspace_fragment>
   }`;
 
@@ -611,7 +649,7 @@ const floorFS = taps => /* glsl */`
   uniform vec3 uRings[3];
   uniform vec3 uMiles[5];
   uniform vec2 uArcC, uAxis, uRight;
-  uniform float uArcR, uArcMax;
+  uniform float uArcR, uArcMax, uPathOn;
   uniform float uTime, uR;
   varying vec4 vClip; varying vec3 vW;
   void main(){
@@ -631,8 +669,8 @@ const floorFS = taps => /* glsl */`
     }
     vec2 uv = vClip.xy / vClip.w + wob;
     // soft near the middle of the room, razor sharp where objects meet the floor
-    float blur = mix(${taps > 4 ? '0.0032' : '0.0016'}, 0.0004, rr * rr);
-    float lod = mix(${taps > 4 ? '1.5' : '2.0'}, 0.0, rr * rr);
+    float blur = mix(${taps > 4 ? '0.0018' : '0.0012'}, 0.0003, rr * rr);
+    float lod = mix(${taps > 4 ? '0.8' : '1.3'}, 0.0, rr * rr);
     vec3 refl = vec3(0.0);
     ${taps > 4 ? `
     const int NT = 8;
@@ -662,10 +700,10 @@ const floorFS = taps => /* glsl */`
     float pang = atan(dot(prel, uRight), dot(prel, uAxis)), plat = length(prel) - uArcR;
     float pmask = 1.0 - smoothstep(uArcMax, uArcMax + 0.03, abs(pang));
     float pflow = pow(fract(pang / uArcMax * 1.2 - uTime * 0.22), 6.0);
-    col += mix(uColB, uColA, pang / uArcMax * 0.5 + 0.5) * (exp(-plat * plat * 260.0) * (0.5 + pflow * 1.4) + exp(-plat * plat * 16.0) * 0.05 * (0.4 + pflow)) * pmask;
+    col += mix(uColB, uColA, pang / uArcMax * 0.5 + 0.5) * (exp(-plat * plat * 260.0) * (0.5 + pflow * 1.4) + exp(-plat * plat * 16.0) * 0.05 * (0.4 + pflow)) * pmask * uPathOn;
     for (int i = 0; i < 5; i++) {     // soft pool of light under each sphere
       float md = length(vW.xz - uMiles[i].xy);
-      col += uColA * exp(-md * md * 9.0) * (0.05 + uMiles[i].z * 0.16);
+      col += uColA * exp(-md * md * 9.0) * (0.05 + uMiles[i].z * 0.16) * uPathOn;
     }
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
@@ -768,7 +806,7 @@ const PTS_FS = /* glsl */`
 
 // ---------- Live data on the walls ----------
 const CANDLES_URL = 'https://api.bitget.com/api/v2/mix/market/candles?symbol=BTCUSDT&productType=USDT-FUTURES&granularity=1H&limit=';
-const CH_N = 72, CH_WARM = 60;
+const CH_N = 48, CH_WARM = 60;
 
 function ema(vals, n) {
   const k = 2 / (n + 1), out = [];
@@ -786,7 +824,7 @@ async function fetchCandles() {
 // Same scales as the page chart, as fractions of the chart rectangle
 function chartScale(all) {
   const hi = Math.max(...all.map(k => k.h)), lo = Math.min(...all.map(k => k.l));
-  const axis = 0.09, pad = 0.05, bottom = 0.09, plotW = 1 - axis, plotH = 1 - pad - bottom;
+  const axis = 0.12, pad = 0.05, bottom = 0.09, plotW = 1 - axis, plotH = 1 - pad - bottom;
   return { hi, lo, axis, pad, plotW, plotH, step: plotW / all.length, y: v => pad + (hi - v) / (hi - lo || 1) * plotH };
 }
 // Axes, EMA and last price. The candles themselves are 3D bars in front of this layer.
@@ -810,9 +848,10 @@ function drawChartLayer(g, W, H, data, status) {
     const label = d.getHours() === 0 ? dayFmt.format(d) : hourFmt.format(d);
     g.fillText(label, x - g.measureText(label).width / 2, H - H * 0.02);
   });
+  g.save(); g.shadowColor = 'rgba(139,124,255,0.9)'; g.shadowBlur = H * 0.035;
   g.strokeStyle = 'rgba(139,124,255,0.95)'; g.lineWidth = Math.max(1.5, W / 600); g.beginPath();
   line.forEach((v, i) => { const x = i * step + step / 2; i ? g.lineTo(x, y(v)) : g.moveTo(x, y(v)); });
-  g.stroke();
+  g.stroke(); g.restore();
   const last = all[all.length - 1].c, ly = y(last), lh = H * 0.06, axis = sc.axis * W;
   g.setLineDash([4, 5]); g.strokeStyle = 'rgba(124,247,212,0.7)'; g.lineWidth = 1;
   g.beginPath(); g.moveTo(0, ly); g.lineTo(plotW, ly); g.stroke(); g.setLineDash([]);
@@ -851,7 +890,8 @@ function slabGeometry(T, pw, ph, lw, lh, blocks, depth, nx = 40, ny = 25) {
   };
   grid(0, 0, lw, lh, 0, nx, ny, 0, 0);
   box(0, 0, lw, lh, 0, -depth, nx, ny, 0);
-  blocks.forEach(z => { grid(z.x, z.y, z.x + z.w, z.y + z.h, z.d, 8, 6, 1, z.noLift || z.passive ? 0 : 1); box(z.x, z.y, z.w, z.h, z.d, 0, 8, 6, z.noLift || z.passive ? 0 : 1); });
+  // flush with the panel at rest: the vertex shader raises the one being hovered, touched or selected
+  blocks.forEach(z => { grid(z.x, z.y, z.x + z.w, z.y + z.h, 0.004, 8, 6, 1, 1); box(z.x, z.y, z.w, z.h, 0.004, 0, 8, 6, 1); });
   const g = new T.BufferGeometry();
   g.setAttribute('position', new T.Float32BufferAttribute(P, 3));
   g.setAttribute('uv', new T.Float32BufferAttribute(UV, 2));
@@ -949,7 +989,8 @@ async function buildRoom() {
   const cv = el('canvas');
   ui.insertBefore(cv, ui.firstChild);
   const small = coarse || Math.min(innerWidth, innerHeight) < 600;
-  const scale = small ? 0.85 : 1;   // wall texture resolution
+  // wall texture resolution (logical size x this): sharp up close, where the text is actually read
+  const scale = small ? 1 : 1.5;
   const renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance', stencil: false });
   renderer.setClearColor(0x05060a, 1);
 
@@ -1051,7 +1092,7 @@ async function buildRoom() {
   const floorUni = {
     uTime: shared.uTime, uColA: shared.uColA, uColB: shared.uColB, uR: { value: R }, uRefl: { value: reflRT.texture }, uTexMat: { value: texMat },
     uRings: { value: [new T.Vector3(0, 0, -1), new T.Vector3(0, 0, -1), new T.Vector3(0, 0, -1)] },
-    uMiles: { value: [0, 1, 2, 3, 4].map(() => new T.Vector3(0, 0, 0)) }, uAxis: { value: new T.Vector2() }, uRight: { value: new T.Vector2() }, uArcC: { value: new T.Vector2() }, uArcR: { value: 6 }, uArcMax: { value: 1 },
+    uMiles: { value: [0, 1, 2, 3, 4].map(() => new T.Vector3(0, 0, 0)) }, uAxis: { value: new T.Vector2() }, uRight: { value: new T.Vector2() }, uArcC: { value: new T.Vector2() }, uArcR: { value: 6 }, uArcMax: { value: 1 }, uPathOn: { value: 0 },
   };
   const floor = new T.Mesh(keep(new T.CircleGeometry(R, N)), shaderMat({ uniforms: floorUni, vertexShader: FLOOR_VS, fragmentShader: floorFS(small ? 4 : 8) }));
   floor.rotation.x = -Math.PI / 2; floor.rotation.z = Math.PI / N; scene.add(floor);
@@ -1080,7 +1121,7 @@ async function buildRoom() {
     Promise.all([`500 40px "Space Grotesk"`, `400 40px "Space Grotesk"`, `400 20px "JetBrains Mono"`, `500 20px "JetBrains Mono"`].map(f => document.fonts.load(f))).catch(() => {}),
     new Promise(r => setTimeout(r, 2500)),
   ]);
-  const maxAniso = Math.min(small ? 4 : 8, renderer.capabilities.getMaxAnisotropy());
+  const maxAniso = Math.min(small ? 8 : 16, renderer.capabilities.getMaxAnisotropy());
   const panels = [], proxies = [], counts = [];
   const proxyGeo = keep(new T.PlaneGeometry(PW, PH));
   const blank = keep(new T.DataTexture(new Uint8Array(4), 1, 1)); blank.needsUpdate = true;
@@ -1088,7 +1129,7 @@ async function buildRoom() {
     uTime: shared.uTime, uColA: shared.uColA, uColB: shared.uColB,
     uMap: { value: tex }, uLive: { value: blank }, uNum: { value: blank }, uNumOn: { value: 0 }, uLiveRect: { value: new T.Vector4() }, uLiveOn: { value: 0 },
     uReveal: { value: 0 }, uHover: { value: 0 }, uFocus: { value: 0.7 }, uPhase: { value: phase }, uPtr: { value: new T.Vector2(0.5, 0.5) }, uAsp: { value: asp },
-    uRip: { value: new T.Vector3(0.5, 0.5, -1) }, uZone: { value: new T.Vector4() }, uZoneAmt: { value: 0 }, uSheen: { value: 1 }, uLift: { value: new T.Vector4(-1, -1, -1, -1) }, uLiftAmt: { value: 0 },
+    uRip: { value: new T.Vector3(0.5, 0.5, -1) }, uZone: { value: new T.Vector4() }, uZoneAmt: { value: 0 }, uSheen: { value: 1 }, uLift: { value: new T.Vector4(-1, -1, -1, -1) }, uLiftAmt: { value: 0 }, uLiftH: { value: 0.16 }, uFlex: { value: 1 },
   });
   const panelMat = u => shaderMat({ uniforms: u, vertexShader: PANEL_VS, fragmentShader: PANEL_FS, side: T.DoubleSide });
   for (let i = 0; i < N; i++) {
@@ -1100,7 +1141,7 @@ async function buildRoom() {
     // numbers that count up: remember what is behind them, then draw their final value
     let numLayer = null;
     if (cnt.length) {
-      const w2 = small ? 768 : 1024, h2 = Math.round(w2 * TH / TW), ls = w2 / TW;
+      const w2 = small ? 1024 : 1536, h2 = Math.round(w2 * TH / TW), ls = w2 / TW;
       const clean = el('canvas'); clean.width = w2; clean.height = h2; clean.getContext('2d').drawImage(c, 0, 0, w2, h2);
       const oc = el('canvas'); oc.width = w2; oc.height = h2;
       const og = oc.getContext('2d'); og.scale(ls, ls);
@@ -1120,6 +1161,7 @@ async function buildRoom() {
     const proxy = new T.Mesh(proxyGeo); proxy.visible = false; proxy.userData.panel = mesh; mesh.add(proxy);
     scene.add(mesh); panels.push(mesh); proxies.push(proxy);
     renderer.initTexture(tex);               // upload now, in slices, instead of one long hitch on the first frame
+    c.width = c.height = 1;                  // uploaded: the GPU copy is all that is needed
     setLoad((i + 1) / (N + 2));
     await new Promise(r => setTimeout(r));
     if (!ui || closing) break;
@@ -1147,39 +1189,56 @@ async function buildRoom() {
 
   // --- live layers: chart axes on the Trading wall and BTC ticker on the Home wall
   const rectUv = r => new T.Vector4(r.x / TW, 1 - (r.y + r.h) / TH, (r.x + r.w) / TW, 1 - r.y / TH);
-  const chartW = small ? 768 : 1280, chartH = Math.round(chartW * CHART.h / CHART.w);
+  const chartW = small ? 1024 : 2048, chartH = Math.round(chartW * CHART.h / CHART.w);
   const chartC = el('canvas'); chartC.width = chartW; chartC.height = chartH;
   const chartG = chartC.getContext('2d');
   const chartTex = keep(new T.CanvasTexture(chartC)); chartTex.colorSpace = T.SRGBColorSpace; chartTex.anisotropy = maxAniso;
   const tradingPanel = panels[WALL_TRADING], tp = tradingPanel.userData.u;
   tp.uLive.value = chartTex; tp.uLiveRect.value.copy(rectUv(CHART)); tp.uLiveOn.value = 1;
+  tp.uFlex.value = 0;   // this wall stays rigid so nothing can rise over the candles
 
-  // BTC candles as solid bars standing out of the chart
-  const CHART_Z = 0.1;
-  const barUni = { uGrow: { value: 1 }, uCount: { value: CH_N }, uFocus: tp.uFocus };
-  const barMat3D = shaderMat({ uniforms: barUni, vertexShader: BARS_VS, fragmentShader: BARS_FS });
-  const barBox = keep(new T.BoxGeometry(1, 1, 1)); barBox.translate(0, 0, 0.5);
-  const barColors = new T.InstancedBufferAttribute(new Float32Array(CH_N * 3), 3);
-  barBox.setAttribute('aBarColor', barColors);
-  const bodies = new T.InstancedMesh(barBox, barMat3D, CH_N), wicks = new T.InstancedMesh(barBox, barMat3D, CH_N);
-  [bodies, wicks].forEach(m => { m.frustumCulled = false; m.count = 0; tradingPanel.add(m); disposables.push(m); });
-  const colUp = new T.Color(C.up), colDown = new T.Color(C.down), mtx = new T.Matrix4();
+  // BTC candles: glass tubes floating in front of the chart, leaning back slightly so their depth reads straight on
+  const CHART_Z = 0.07;
+  const chartMidY = (0.5 - (CHART.y + CHART.h / 2) / TH) * PH;
+  const barUni = { uGrow: { value: 1 }, uCount: { value: CH_N }, uFocus: tp.uFocus, uTime: shared.uTime };
+  const holo = new T.Group(); holo.position.set(0, chartMidY, CHART_Z); holo.rotation.x = -0.08; tradingPanel.add(holo);
+  const sphereBase = keep(new T.SphereGeometry(1, small ? 14 : 22, small ? 10 : 16));
+  const quadBase = keep(new T.PlaneGeometry(2, 2));
+  function instanced(base, n) {
+    const g = keep(new T.InstancedBufferGeometry());
+    g.index = base.index; g.setAttribute('position', base.attributes.position); g.setAttribute('normal', base.attributes.normal);
+    g.setAttribute('aC', new T.InstancedBufferAttribute(new Float32Array(n * 4), 4));
+    g.setAttribute('aColor', new T.InstancedBufferAttribute(new Float32Array(n * 3), 3));
+    g.instanceCount = 0;
+    return g;
+  }
+  const bodyGeo = instanced(sphereBase, CH_N), wickGeo = instanced(sphereBase, CH_N), haloGeo = instanced(quadBase, CH_N);
+  const bodyMat = shaderMat({ uniforms: { ...barUni, uWick: { value: 0 } }, vertexShader: CANDLE_VS, fragmentShader: CANDLE_FS });
+  const wickMat = shaderMat({ uniforms: { ...barUni, uWick: { value: 1 } }, vertexShader: CANDLE_VS, fragmentShader: CANDLE_FS });
+  const haloMat = shaderMat({ uniforms: barUni, vertexShader: HALO_VS, fragmentShader: HALO_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending });
+  [[haloGeo, haloMat], [wickGeo, wickMat], [bodyGeo, bodyMat]].forEach(([g, m]) => {
+    const mesh = new T.Mesh(g, m); mesh.frustumCulled = false; holo.add(mesh);
+  });
+  const colUp = new T.Color(C.up), colDown = new T.Color(C.down);
   function layoutBars(data) {
     const all = data.candles, sc = chartScale(all);
     const cw = CHART.w / TW * PW, chh = CHART.h / TH * PH;
-    const cx0 = (CHART.x / TW - 0.5) * PW, cy0 = (0.5 - CHART.y / TH) * PH;
+    const cx0 = (CHART.x / TW - 0.5) * PW, cy0 = (0.5 - CHART.y / TH) * PH - chartMidY;
+    const step = sc.step * cw, r = step * 0.3;
+    const bC = bodyGeo.attributes.aC, wC = wickGeo.attributes.aC, hC = haloGeo.attributes.aC;
+    const bK = bodyGeo.attributes.aColor, wK = wickGeo.attributes.aColor, hK = haloGeo.attributes.aColor;
     all.forEach((k, i) => {
-      const x = cx0 + (i + 0.5) * sc.step * cw, up = k.c >= k.o, step = sc.step * cw;
+      const x = cx0 + (i + 0.5) * step, cc = k.c >= k.o ? colUp : colDown;
       const yT = cy0 - sc.y(Math.max(k.o, k.c)) * chh, yB = cy0 - sc.y(Math.min(k.o, k.c)) * chh;
       const yH = cy0 - sc.y(k.h) * chh, yL = cy0 - sc.y(k.l) * chh;
-      mtx.makeScale(step * 0.64, Math.max(0.004, yT - yB), 0.035).setPosition(x, (yT + yB) / 2, CHART_Z);
-      bodies.setMatrixAt(i, mtx);
-      const cc = up ? colUp : colDown; barColors.setXYZ(i, cc.r, cc.g, cc.b);
-      mtx.makeScale(Math.max(0.0045, step * 0.09), Math.max(0.004, yH - yL), 0.012).setPosition(x, (yH + yL) / 2, CHART_Z + 0.011);
-      wicks.setMatrixAt(i, mtx);
+      const half = Math.max(0, (yT - yB) / 2 - r);
+      bC.setXYZW(i, x, (yT + yB) / 2, half, r);
+      wC.setXYZW(i, x, (yH + yL) / 2, Math.max(0, (yH - yL) / 2), Math.max(0.0035, r * 0.14));
+      hC.setXYZW(i, x, (yT + yB) / 2, (yT - yB) / 2 + r, r);
+      [bK, wK, hK].forEach(a => a.setXYZ(i, cc.r, cc.g, cc.b));
     });
-    [bodies, wicks].forEach(m => { m.count = all.length; m.instanceMatrix.needsUpdate = true; });
-    barColors.needsUpdate = true;
+    [bC, wC, hC, bK, wK, hK].forEach(a => { a.needsUpdate = true; });
+    bodyGeo.instanceCount = wickGeo.instanceCount = haloGeo.instanceCount = all.length;
     barUni.uCount.value = all.length;
   }
 
@@ -1190,7 +1249,7 @@ async function buildRoom() {
     const n = lightPts.length, lp = new Float32Array(n * 3), lc = new Float32Array(n * 3), ls = new Float32Array(n), li = new Float32Array(n);
     const tmpC = new T.Color(C.accent);
     lightPts.forEach((p, i) => {
-      lp[i * 3] = (p.x / TW - 0.5) * PW; lp[i * 3 + 1] = (0.5 - p.y / TH) * PH; lp[i * 3 + 2] = 0.2;
+      lp[i * 3] = (p.x / TW - 0.5) * PW; lp[i * 3 + 1] = (0.5 - p.y / TH) * PH; lp[i * 3 + 2] = 0.1;
       lc[i * 3] = tmpC.r; lc[i * 3 + 1] = tmpC.g; lc[i * 3 + 2] = tmpC.b;
       ls[i] = 1; li[i] = i;
     });
@@ -1220,7 +1279,8 @@ async function buildRoom() {
     if (live.alive) paintChart();
   }
 
-  const tickC = el('canvas'); tickC.width = 1024; tickC.height = Math.round(1024 * TICK.h / TICK.w);
+  const tickW = small ? 1024 : 1536;
+  const tickC = el('canvas'); tickC.width = tickW; tickC.height = Math.round(tickW * TICK.h / TICK.w);
   const tickG = tickC.getContext('2d');
   const tickTex = keep(new T.CanvasTexture(tickC)); tickTex.colorSpace = T.SRGBColorSpace;
   const hp = panels[0].userData.u;
@@ -1253,8 +1313,9 @@ async function buildRoom() {
   const plateGeo = keep(slabGeometry(T, PLATE.w, PLATE.h, PLATE_W, PLATE_H, [], 0.14, 8, 5));
   const sphereGeo = keep(new T.SphereGeometry(0.24, 32, 24));
   jobs.forEach((j, i) => {
-    const c = el('canvas'); c.width = PLATE_W; c.height = PLATE_H;
-    const g = c.getContext('2d');
+    const plateK = small ? 1.5 : 2;
+    const c = el('canvas'); c.width = PLATE_W * plateK; c.height = PLATE_H * plateK;
+    const g = c.getContext('2d'); g.scale(plateK, plateK);
     try { paintPlate(g, j, i + 1); } catch (e) { console.error('VR plate', i, e); }
     const tex = keep(new T.CanvasTexture(c)); tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = maxAniso;
     const u = panelUniforms(tex, i * 2.1, PLATE.w / PLATE.h);
@@ -1264,6 +1325,7 @@ async function buildRoom() {
     const proxy = new T.Mesh(plateProxy); proxy.visible = false; proxy.userData.panel = mesh; mesh.add(proxy);
     scene.add(mesh); plates.push(mesh);
     renderer.initTexture(tex);
+    c.width = c.height = 1;                  // uploaded: the GPU copy is all that is needed
     const nc = el('canvas'); nc.width = nc.height = 128;
     const ng = nc.getContext('2d'); ng.font = `500 92px ${SANS}`; ng.textAlign = 'center'; ng.textBaseline = 'middle'; ng.fillStyle = '#fff'; ng.fillText(String(i + 1), 64, 68);
     const nt = keep(new T.CanvasTexture(nc));
@@ -1328,7 +1390,7 @@ async function buildRoom() {
     return { fov, dist: clamp(Math.max((w / 2) / (th * mw), (h / 2) / (tv * mh), sharp), 1.05, AP + 4.6) };
   }
   function applyMode() {
-    if (s.mode === 'over') {
+    if (s.mode === 'over' || s.mode === 'career') {
       const asp = size().w / size().h;
       s.tPanX = s.tPanY = 0; s.tFov = asp < 1 ? 78 : 74;
       if (s.walking) s.tDist = AP;
@@ -1360,15 +1422,16 @@ async function buildRoom() {
   }
   function setMode(mode, wall, zone) {
     if (wall != null) toWall(wall);
-    if (mode === 'wall' && wall === WALL_PATH) mode = 'over';   // this wall is seen from down the path
+    if (mode === 'wall' && wall === WALL_PATH) mode = 'career';   // this wall opens the career view
     if (mode !== 'plate') s.plate = -1;
-    s.walking = false;
+    s.walking = false; walkVF = walkVS = 0;
     s.mode = mode; s.zone = zone || null; s.zoneWall = zone ? wall : -1; s.tPull = 0;
     applyMode();
     hideHint();
   }
   function stepOut() {
     if (s.mode === 'zone') setMode('wall', wrap(-Math.round(s.tYaw / STEP)));
+    else if (s.mode === 'plate') setMode('career', WALL_PATH);
     else setMode('over');
   }
   const wrap = i => ((i % N) + N) % N;
@@ -1412,6 +1475,7 @@ async function buildRoom() {
 
   // --- adaptive quality: drops resolution before it would ever drop frames
   const TIERS = [
+    { pr: 2.5, refl: 1080, every: 1, pts: 1 },
     { pr: 2, refl: 720, every: 1, pts: 1 },
     { pr: 1.5, refl: 512, every: 1, pts: 1 },
     { pr: 1.25, refl: 360, every: 2, pts: 0.7 },
@@ -1419,7 +1483,8 @@ async function buildRoom() {
   ];
   let tier = 0, frameNo = 0, mirrorFresh = false;
   function applySize() {
-    const { w, h } = size(), T0 = TIERS[tier], pr = Math.min(devicePixelRatio, T0.pr);
+    // standard-density desktop screens render above their native resolution, for clean edges and text
+    const { w, h } = size(), T0 = TIERS[tier], pr = Math.min(small ? devicePixelRatio : Math.max(devicePixelRatio, 1.5), T0.pr);
     renderer.setPixelRatio(pr); renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
     const rh = Math.min(T0.refl, h * pr), rw = Math.round(rh * w / h);
@@ -1445,6 +1510,7 @@ async function buildRoom() {
     const oh = ray.ray.intersectSphere(_t.copy(orbCenter) && new T.Sphere(orbCenter, ORB_R * orb.scale.x * 1.2), orbHit);
     if (oh && (!hit || oh.distanceTo(ray.ray.origin) < hit.distance)) return { orb: true };
     for (let i = 0; i < spheres.length; i++) {
+      if (!spheres[i].visible) continue;
       const b = ray.ray.intersectSphere(_sph.set(spheres[i].position, 0.34), orbHit);
       if (b && (!hit || b.distanceTo(ray.ray.origin) < hit.distance)) return { panel: plates[i], plate: i, uv: _mid };
     }
@@ -1454,7 +1520,7 @@ async function buildRoom() {
     const mesh = hit.object.userData.panel;
     if (mesh.userData.plate != null) return { panel: mesh, plate: mesh.userData.plate, uv: hit.uv };
     const px = hit.uv.x * TW, py = (1 - hit.uv.y) * TH;
-    const zone = mesh.userData.zones.find(z => !z.passive && px >= z.x && px <= z.x + z.w && py >= z.y && py <= z.y + z.h) || null;
+    const zone = mesh.userData.zones.find(z => px >= z.x && px <= z.x + z.w && py >= z.y && py <= z.y + z.h) || null;
     return { panel: mesh, wall: mesh.userData.wall, uv: hit.uv, zone, point: hit.point };
   }
   let ringI = 0;
@@ -1475,7 +1541,7 @@ async function buildRoom() {
   const setCursor = (active, label) => { if (cursorEl) { cursorEl.classList.toggle('is-hover', active); if (cursorLabel) cursorLabel.textContent = label || ''; } };
   const ptrs = new Map();
   const DOUBLE_MS = 280;
-  let pendingTap = null;
+  let pendingTap = null, tapLock = 0;
   let moved = 0, downAt = 0, pinch0 = 0, dist0 = 0, hoverDirty = false, hx = 0, hy = 0, hoverPanel = null, hoverZone = null, lastMoveT = 0, dragging = false;
   const pdist = () => { const [a, b] = [...ptrs.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
   function touchWake() { s.lastInput = performance.now(); }
@@ -1498,7 +1564,7 @@ async function buildRoom() {
     touchWake();
     const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
     if (ptrs.size >= 2) {
-      if (s.mode === 'over') { const pd = pdist(); walkBy((pd - pinch0) * 0.012, 0); pinch0 = pd; return; }
+      if (s.mode === 'over' || s.mode === 'career') { const pd = pdist(); walkBy((pd - pinch0) * 0.012, 0); pinch0 = pd; return; }
       s.tDist = clamp(dist0 * pinch0 / pdist(), 1.05, AP + 4.6);
       if (s.mode === 'wall' && s.tDist < frameDist(PW, PH, 0.94, 0.74).dist * 0.8) { s.mode = 'zone'; s.zone = null; q('back').classList.remove('is-off'); }
       return;
@@ -1522,7 +1588,7 @@ async function buildRoom() {
       if (coarse) walkBy(-dy * 0.014, 0);
       else s.tPitch = clamp(s.tPitch + dy * rad(s.fov) / h, rad(-22), rad(62));
     }
-    else if (s.mode === 'plate') { setMode('over'); }
+    else if (s.mode === 'plate') { setMode('career', WALL_PATH); }
     else s.tPull = 1;                            // pull back while swiping between walls, then push in again
   });
   const up = e => {
@@ -1532,7 +1598,7 @@ async function buildRoom() {
     if (!wasOne) { moved = 99; return; }
     const stale = performance.now() - lastMoveT > 90;
     if (dragging) {
-      if (s.mode === 'wall') {                   // snap to the wall the swipe was heading to
+      if (s.mode === 'wall' || s.mode === 'career') {   // snap to the wall the swipe was heading to
         const next = wrap(-Math.round((s.tYaw + (stale ? 0 : clamp(s.vel, -3.2, 3.2) * 0.16)) / STEP));
         s.tPull = 0; setMode('wall', next);
       } else if (s.mode === 'over' && !stale) s.tYaw += clamp(s.vel, -3, 3) * 0.1;  // glide
@@ -1540,8 +1606,9 @@ async function buildRoom() {
     }
     if (e.type === 'pointerup' && moved < 8 && performance.now() - downAt < 600) {
       const tx = e.clientX, ty = e.clientY;
+      if (performance.now() < tapLock) return;
       if (pendingTap && Math.hypot(tx - pendingTap.x, ty - pendingTap.y) < 48) {
-        clearTimeout(pendingTap.timer); pendingTap = null;
+        clearTimeout(pendingTap.timer); pendingTap = null; tapLock = performance.now() + 320;
         stepOut();                                 // double click / double tap = the Back button
         return;
       }
@@ -1552,7 +1619,7 @@ async function buildRoom() {
   on(cv, 'pointerup', up); on(cv, 'pointercancel', up);
   on(cv, 'wheel', e => {
     e.preventDefault(); touchWake();
-    if (s.mode === 'over') { walkBy(-e.deltaY * 0.004, 0); return; }
+    if (s.mode === 'over' || s.mode === 'career') { walkBy(-e.deltaY * 0.004, 0); return; }
     s.tDist = clamp(s.tDist * Math.exp(e.deltaY * 0.0011), 1.05, AP + 4.6);
     if (s.mode === 'wall' && s.tDist < frameDist(PW, PH, 0.94, 0.74).dist * 0.8) { s.mode = 'zone'; s.zone = null; q('back').classList.remove('is-off'); }
     hideHint();
@@ -1564,7 +1631,7 @@ async function buildRoom() {
     if (h.plate != null) {
       h.panel.userData.u.uRip.value.set(h.uv.x, h.uv.y, 0);
       const m = h.panel.userData.milestone; floorRing(m.x, m.y);
-      if (s.mode === 'plate' && s.plate === h.plate) { setMode('over'); return; }
+      if (s.mode === 'plate' && s.plate === h.plate) { setMode('career', WALL_PATH); return; }
       s.plate = h.plate; s.walking = false; s.mode = 'plate'; s.zone = null; s.zoneWall = -1;
       applyMode(); hideHint();
       return;
@@ -1584,7 +1651,7 @@ async function buildRoom() {
     }
     if (h.floor && Math.hypot(h.floor.x, h.floor.z) < R) {
       floorRing(h.floor.x, h.floor.z);
-      const mile = plates.findIndex(p => Math.hypot(p.userData.milestone.x - h.floor.x, p.userData.milestone.y - h.floor.z) < 0.7);
+      const mile = s.mode !== 'career' && s.mode !== 'plate' ? -1 : plates.findIndex(p => Math.hypot(p.userData.milestone.x - h.floor.x, p.userData.milestone.y - h.floor.z) < 0.7);
       if (mile >= 0) { s.plate = mile; s.walking = false; s.mode = 'plate'; s.zone = null; s.zoneWall = -1; applyMode(); hideHint(); return; }
       walkTo(h.floor.x, h.floor.z);
       return;
@@ -1646,7 +1713,7 @@ async function buildRoom() {
   const tmpA = new T.Color(), tmpB = new T.Color();
   const smooth = (a, b, dt, r) => a + (b - a) * (1 - Math.exp(-r * dt));
   const speed = reduceMotion ? 0.2 : 1;
-  let time = 0, startedAt = -1, frameSum = 0, frameCount = 0, perfWindow = 0;
+  let time = 0, startedAt = -1, frameSum = 0, frameCount = 0, perfWindow = 0, slowWindows = 0;
   s.burst = 0;
 
   renderer.setAnimationLoop(() => {
@@ -1662,7 +1729,9 @@ async function buildRoom() {
       frameSum += raw; frameCount++; perfWindow += raw;
       if (perfWindow > 1.2) {
         const avg = frameSum / frameCount;
-        if (avg > 1 / 42 && tier < TIERS.length - 1) { tier++; applySize(); }
+        // only sustained slowness lowers the quality, not a single hiccup
+        slowWindows = avg > 1 / 42 ? slowWindows + 1 : 0;
+        if (slowWindows >= 2 && tier < TIERS.length - 1) { tier++; slowWindows = 0; applySize(); }
         frameSum = 0; frameCount = 0; perfWindow = 0;
       }
     }
@@ -1672,7 +1741,7 @@ async function buildRoom() {
     // arrow keys: forward, back and sideways relative to where the camera looks
     const fw = keys.ArrowUp - keys.ArrowDown, st = keys.ArrowRight - keys.ArrowLeft;
     walkVF = smooth(walkVF, fw * 3.4, dt, 7); walkVS = smooth(walkVS, st * 2.8, dt, 7);
-    if (fw || st || Math.abs(walkVF) > 0.02 || Math.abs(walkVS) > 0.02) { touchWake(); walkBy(walkVF * dt, walkVS * dt); }
+    if (fw || st || (s.walking && (Math.abs(walkVF) > 0.02 || Math.abs(walkVS) > 0.02))) { touchWake(); walkBy(walkVF * dt, walkVS * dt); }
     s.yaw = smooth(s.yaw, s.tYaw, dt, 6);
     s.pitch = smooth(s.pitch, s.tPitch, dt, 3.6);
     s.dist = smooth(s.dist, s.tDist, dt, 3.6);
@@ -1724,7 +1793,7 @@ async function buildRoom() {
       const u = p.userData.u;
       const order = Math.min(i, N - i);
       u.uReveal.value = reduceMotion ? 1 : easeOut((since - 0.25 - order * 0.14) / 1.3);
-      const focusT = s.mode === 'over' ? (i === s.wall ? 1 : 0.82) : (i === s.wall ? 1 : 0.32);
+      const focusT = s.mode === 'over' || s.mode === 'career' ? (i === s.wall ? 1 : 0.82) : (i === s.wall ? 1 : 0.32);
       u.uFocus.value = smooth(u.uFocus.value, focusT, dt, 4);
       // comes out of the wall on opening; the wall you face stands a little further forward
       const out = (u.uReveal.value - 1) * 1.25 + (u.uFocus.value - 0.82) * 0.3;
@@ -1735,7 +1804,8 @@ async function buildRoom() {
       const sel = s.mode === 'zone' && s.zone && s.zoneWall === i;
       if (isHover && hoverZone) zoneUv(u, hoverZone); else if (sel) zoneUv(u, s.zone);
       u.uZoneAmt.value = smooth(u.uZoneAmt.value, (isHover && hoverZone) || sel ? 1 : 0, dt, 9);
-      const lifted = isHover && hoverZone && hoverZone.d && !hoverZone.noLift ? hoverZone : sel && s.zone.d && !s.zone.noLift ? s.zone : null;
+      const lifted = isHover && hoverZone && hoverZone.d ? hoverZone : sel && s.zone.d ? s.zone : null;
+      if (lifted) u.uLiftH.value = lifted.d + 0.04;
       if (lifted) u.uLift.value.set(lifted.x / TW, 1 - (lifted.y + lifted.h) / TH, (lifted.x + lifted.w) / TW, 1 - lifted.y / TH);
       u.uLiftAmt.value = smooth(u.uLiftAmt.value, lifted ? 1 : 0, dt, 9);
       if (u.uSheen.value < 1) u.uSheen.value = Math.min(1, u.uSheen.value + dt / 1.1);
@@ -1745,11 +1815,12 @@ async function buildRoom() {
     if (arrival.t < 1) arrival.t = Math.min(1, arrival.t + dt / 4.2);
     barUni.uGrow.value = Math.min(1, arrival.t / 0.62);
     lightUni.uShow.value = clamp((arrival.t - 0.58) / 0.42, 0, 1);
-    // career plates rise from the floor when the path is in front of you, and step aside for the one being read
-    const facingPath = Math.abs(shortest(s.yaw + WALL_PATH * STEP)) < STEP * 0.72;
+    // spheres, path and plates exist only while Professional Experience is selected; plates step aside for the one being read
+    const careerOn = s.mode === 'career' || s.mode === 'plate';
+    floorUni.uPathOn.value = smooth(floorUni.uPathOn.value, careerOn ? 1 : 0, dt, 4);
     plates.forEach((p, i) => {
       const m = p.userData, u = m.u;
-      const want = s.mode === 'plate' ? (s.plate === i ? 1 : 0) : (facingPath && (s.mode === 'over') ? 1 : 0);
+      const want = s.mode === 'plate' ? (s.plate === i ? 1 : 0) : (s.mode === 'career' ? 1 : 0);
       m.rise = reduceMotion ? want : smooth(m.rise, want, dt, 3.2 - i * 0.25);
       p.position.y = m.y - (1 - m.rise) * (m.y + PLATE.h * m.k / 2 + 0.2);
       p.visible = m.rise > 0.01;
@@ -1762,7 +1833,9 @@ async function buildRoom() {
       const ball = spheres[i], bu = ball.material.uniforms.uOn;
       bu.value = smooth(bu.value, lit, dt, 8);
       ball.position.y = ball.userData.base + Math.sin(time * 1.1 + ball.userData.phase) * 0.05;
-      ball.scale.setScalar(1 + bu.value * 0.18);
+      ball.userData.show = reduceMotion ? (careerOn ? 1 : 0) : smooth(ball.userData.show || 0, careerOn ? 1 : 0, dt, 5 - i * 0.4);
+      ball.visible = ball.userData.show > 0.01;
+      ball.scale.setScalar(ball.userData.show * (1 + bu.value * 0.18));
     });
     floorUni.uRings.value.forEach(r => { if (r.z >= 0) { r.z += dt; if (r.z > 2.6) r.z = -1; } });
 
