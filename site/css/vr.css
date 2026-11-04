@@ -26,7 +26,9 @@ body.is-loading .vr-btn, body.vr-open .vr-btn, body.menu-open .vr-btn { opacity:
 
 /* ---------- Overlay + opening transition (same circular wipe as the page menu) ---------- */
 body.vr-open { overflow: hidden; overscroll-behavior: none; }
-body.vr-settled main, body.vr-settled #gl, body.vr-settled .grain { visibility: hidden; } /* nothing behind the room costs GPU */
+/* once the room covers the screen, what is hidden behind it costs nothing, and the finished opening mask is dropped */
+body.vr-settled main, body.vr-settled #gl, body.vr-settled .grain, body.vr-settled .header, body.vr-settled .progress, body.vr-settled .menu { visibility: hidden; }
+body.vr-settled .vr { clip-path: none; }
 body.vr-open .cursor { z-index: 210; }
 body.vr-open .sleep { z-index: 205; }
 body.vr-open .mailpick { z-index: 208; }

@@ -505,9 +505,11 @@ const PANEL_FS = /* glsl */`
     // rounded, anti-aliased edge of the panel, with a beam of light travelling slowly around it
     vec2 qs = (vUv - 0.5) * asp;
     float sdS = rrect(qs, uSlab.xy, uSlab.z), aaS = max(fwidth(sdS), 0.00001);
-    float rim = exp(-pow(sdS / max(0.0016, aaS * 1.3), 2.0));
-    float beamS = pow(fract(atan(qs.y, qs.x) / TAU + uTime * 0.03 + uPhase * 0.17), 22.0);
-    col += mix(uColA, vec3(1.0), 0.25) * rim * (0.045 + beamS * 0.75) * uFocus;
+    if (sdS > -0.02) {
+      float rim = exp(-pow(sdS / max(0.0016, aaS * 1.3), 2.0));
+      float beamS = pow(fract(atan(qs.y, qs.x) / TAU + uTime * 0.03 + uPhase * 0.17), 22.0);
+      col += mix(uColA, vec3(1.0), 0.25) * rim * (0.045 + beamS * 0.75) * uFocus;
+    }
     float alpha = vKind < 0.5 ? 1.0 - smoothstep(-aaS, aaS, sdS) : 1.0;
     // selected or hovered card: a fine soft line with a faster beam running around it
     if (uZoneAmt > 0.001) {
@@ -529,37 +531,43 @@ const PANEL_FS = /* glsl */`
     #include <colorspace_fragment>
   }`;
 
-// BTC candles: square prisms with Bitget's proportions, exact open/close/high/low. Solid colour faces and darker sides
-// show the volume, and a fine anti-aliased edge of light gives them their finish.
+// BTC candles: rectangular prisms of glass and light in the orb's visual language: a dark core, a luminous rim that
+// follows the edges, and energy running through them. Heights are the exact open/close and high/low.
 const CANDLE_VS = /* glsl */`
   uniform float uGrow, uCount;
   attribute vec4 aC;            // x, y, half height, half width
   attribute vec3 aColor;
-  varying vec3 vC; varying vec2 vLocal, vHalf; varying float vG, vLast, vFace;
+  varying vec3 vC; varying vec2 vLocal, vHalf; varying float vG, vLast, vFace, vId;
   void main(){
     float id = float(gl_InstanceID);
     float g = clamp(uGrow * (uCount + 8.0) - id, 0.0, 1.0);
     g = 1.0 - pow(1.0 - g, 3.0);
     vec2 hs = vec2(aC.w, aC.z * g);
     vec3 p = vec3(position.x * 2.0 * hs.x, position.y * 2.0 * hs.y, (position.z + 0.5) * 2.0 * aC.w * g);
-    vLocal = vec2(position.x * 2.0 * hs.x, position.y * 2.0 * hs.y); vHalf = hs;
+    vLocal = p.xy; vHalf = hs;
     p.xy += aC.xy;
-    vC = aColor; vG = g; vFace = abs(normal.z) > 0.5 ? 1.0 : (normal.y > 0.5 ? 0.72 : 0.38);
+    vC = aColor; vG = g; vId = id; vFace = abs(normal.z) > 0.5 ? 1.0 : 0.0;
     vLast = id > uCount - 1.5 ? 1.0 : 0.0;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   }`;
 const CANDLE_FS = /* glsl */`
   uniform float uTime, uFocus, uWick;
-  varying vec3 vC; varying vec2 vLocal, vHalf; varying float vG, vLast, vFace;
+  varying vec3 vC; varying vec2 vLocal, vHalf; varying float vG, vLast, vFace, vId;
   void main(){
     if (vG < 0.01) discard;
-    vec3 col = vC * vFace;
-    if (uWick < 0.5 && vFace > 0.9) {
-      vec2 e = vHalf - abs(vLocal), w = max(fwidth(vLocal), vec2(0.00001));
-      float edge = 1.0 - min(smoothstep(0.0, w.x * 1.4, e.x), smoothstep(0.0, w.y * 1.4, e.y));
-      col = mix(col * 0.82, mix(vC, vec3(1.0), 0.55), edge);   // a little depth in the face, a lit edge around it
+    vec3 col;
+    if (uWick > 0.5) col = vC * 0.85;                          // wicks are filaments of light
+    else if (vFace < 0.5) col = vC * 0.5;                      // the sides show the volume
+    else {
+      vec2 e = (vHalf - abs(vLocal)) / max(vHalf.x, 0.0001);
+      float rim = pow(1.0 - clamp(min(e.x, e.y), 0.0, 1.0), 2.2);
+      col = vC * (0.16 + rim * 1.5);                           // glass: dark core, bright rim
+      float yn = vLocal.y / max(vHalf.y, 0.0001);
+      col += vC * pow(0.5 + 0.5 * sin(yn * 5.0 - uTime * 1.6 + vId * 0.7), 10.0) * 0.5;   // energy running through it
+      float sx = vLocal.x / max(vHalf.x, 0.0001);
+      col += vec3(1.0) * exp(-pow((sx + 0.5) * 7.0, 2.0)) * 0.16;   // a reflection along the glass
     }
-    col *= 1.0 + vLast * (0.5 + 0.5 * sin(uTime * 3.2)) * 0.45;  // the live candle breathes
+    col *= 1.0 + vLast * (0.5 + 0.5 * sin(uTime * 3.2)) * 0.9;  // the live candle breathes
     gl_FragColor = vec4(col * mix(0.4, 1.0, uFocus), 1.0);
     #include <colorspace_fragment>
   }`;
@@ -571,7 +579,7 @@ const HALO_VS = /* glsl */`
   varying vec2 vQ; varying vec3 vC; varying float vG;
   void main(){
     float g = clamp(uGrow * (uCount + 8.0) - float(gl_InstanceID), 0.0, 1.0);
-    vec2 size = vec2(aC.w * 3.0, aC.z * g + aC.w * 3.0);
+    vec2 size = vec2(aC.w * 3.4, aC.z * g + aC.w * 3.4);
     vQ = position.xy * vec2(1.0, 1.0);
     vec3 p = vec3(position.xy * size + aC.xy, -0.045);
     vC = aColor; vG = g;
@@ -582,7 +590,7 @@ const HALO_FS = /* glsl */`
   varying vec2 vQ; varying vec3 vC; varying float vG;
   void main(){
     float a = pow(max(1.0 - vQ.x * vQ.x, 0.0), 2.0) * pow(max(1.0 - vQ.y * vQ.y, 0.0), 1.5);
-    gl_FragColor = vec4(vC, a * 0.09 * vG * mix(0.4, 1.0, uFocus));
+    gl_FragColor = vec4(vC, a * 0.2 * vG * mix(0.4, 1.0, uFocus));
     #include <colorspace_fragment>
   }`;
 
@@ -699,6 +707,7 @@ const floorFS = taps => /* glsl */`
     col += refl * F;
     col += ringCol;
     // the career path: an arc of light running through the milestones, oldest to newest
+    if (uPathOn > 0.004) {
     vec2 prel = vW.xz - uArcC;
     float pang = atan(dot(prel, uRight), dot(prel, uAxis)), plat = length(prel) - uArcR;
     float pmask = 1.0 - smoothstep(uArcMax, uArcMax + 0.03, abs(pang));
@@ -708,50 +717,58 @@ const floorFS = taps => /* glsl */`
       float md = length(vW.xz - uMiles[i].xy);
       col += uColA * exp(-md * md * 9.0) * (0.05 + uMiles[i].z * 0.16) * uPathOn;
     }
+    }
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }`;
 
 const UV_VS = /* glsl */`varying vec2 vUv; varying vec3 vW; void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
-const SPACE = /* glsl */`
+const SKY_BAKE_VS = /* glsl */`varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+const SKY_BAKE_FS = /* glsl */`
+  uniform vec2 uNebScale, uNebPeriod, uStarScale;
+  varying vec2 vUv;
   float h21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
-  float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-    return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y); }
-  float fbm(vec2 p){ return vnoise(p) * 0.55 + vnoise(p * 2.1 + 3.7) * 0.3 + vnoise(p * 4.3 + 9.1) * 0.15; }
-  float stars(vec2 p, float time){
-    vec2 id = floor(p), f = fract(p) - 0.5;
-    float h = h21(id);
-    if (h < 0.93) return 0.0;
-    vec2 o = (vec2(h21(id + 3.1), h21(id + 7.7)) - 0.5) * 0.6;
-    float tw = 0.55 + 0.45 * sin(time * (0.5 + h * 2.0) + h * 40.0);
-    return smoothstep(0.1, 0.0, length(f - o)) * tw * (h - 0.9) * 8.0;
+  float vnoise(vec2 p, vec2 per){
+    vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    vec2 a = mod(i, per), b = mod(i + 1.0, per);
+    return mix(mix(h21(a), h21(vec2(b.x, a.y)), f.x), mix(h21(vec2(a.x, b.y)), h21(b), f.x), f.y);
+  }
+  void main(){
+    vec2 p = vUv * uNebScale;
+    float neb = vnoise(p, uNebPeriod) * 0.55 + vnoise(p * 2.0 + 3.0, uNebPeriod * 2.0) * 0.3 + vnoise(p * 4.0 + 9.0, uNebPeriod * 4.0) * 0.15;
+    vec2 q = vUv * uStarScale, id = floor(q), f = fract(q) - 0.5;
+    float h = h21(id), star = 0.0;
+    if (h >= 0.93) {
+      vec2 o = (vec2(h21(id + 3.1), h21(id + 7.7)) - 0.5) * 0.6;
+      star = smoothstep(0.1, 0.0, length(f - o)) * (h - 0.9) * 8.0;
+    }
+    gl_FragColor = vec4(neb, star, h, 1.0);
   }`;
 const SHELL_FS = /* glsl */`
-  uniform vec3 uColA, uColB; uniform float uTime;
+  uniform vec3 uColA, uColB; uniform float uTime; uniform sampler2D uSky;
   varying vec2 vUv;
-  ${SPACE}
   void main(){
     float y = vUv.y;
+    float neb = texture2D(uSky, vec2(vUv.x + uTime * 0.006 / 16.0, y)).r;
+    vec4 st = texture2D(uSky, vUv);
     vec3 col = vec3(0.0015, 0.0018, 0.0034);
-    vec2 sky = vec2(vUv.x * 16.0, y * 2.4);
-    float neb = fbm(sky + vec2(uTime * 0.006, 0.0));
     col += mix(uColB, uColA, neb) * smoothstep(0.45, 0.85, neb) * 0.009;
-    col += vec3(0.8, 0.86, 1.0) * stars(vec2(vUv.x * 300.0, y * 62.0), uTime) * 0.35;
+    col += vec3(0.8, 0.86, 1.0) * st.g * (0.55 + 0.45 * sin(uTime * (0.5 + st.b * 2.0) + st.b * 40.0)) * 0.35;
     col += uColB * exp(-y * 10.0) * 0.012;
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }`;
 const CEIL_FS = /* glsl */`
-  uniform vec3 uColA, uColB; uniform float uTime, uBurst;
+  uniform vec3 uColA, uColB; uniform float uTime, uBurst; uniform sampler2D uSky;
   varying vec2 vUv;
-  ${SPACE}
   void main(){
     vec2 p = vUv - 0.5; float r = length(p) * 2.0;
+    float neb = texture2D(uSky, vUv + vec2(uTime * 0.005, -uTime * 0.004) / 5.0).r;
+    vec4 st = texture2D(uSky, vUv);
     vec3 col = vec3(0.0015, 0.0018, 0.0034);
-    float neb = fbm(p * 5.0 + vec2(uTime * 0.005, -uTime * 0.004));
     col += mix(uColB, uColA, neb) * smoothstep(0.4, 0.85, neb) * 0.014;
     col += mix(uColA, uColB, r) * exp(-r * r * 6.0) * (0.012 + uBurst * 0.3);
-    col += vec3(0.8, 0.86, 1.0) * stars(vUv * 110.0, uTime) * 0.4;
+    col += vec3(0.8, 0.86, 1.0) * st.g * (0.55 + 0.45 * sin(uTime * (0.5 + st.b * 2.0) + st.b * 40.0)) * 0.4;
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }`;
@@ -800,7 +817,7 @@ const PTS_FS = /* glsl */`
 
 // ---------- Live data on the walls ----------
 const CANDLES_URL = 'https://api.bitget.com/api/v2/mix/market/candles?symbol=BTCUSDT&productType=USDT-FUTURES&granularity=1H&limit=';
-const CH_N = 72, CH_WARM = 60;
+const CH_N = 48, CH_WARM = 60;
 
 function ema(vals, n) {
   const k = 2 / (n + 1), out = [];
@@ -1000,12 +1017,24 @@ async function buildRoom() {
   const shaderMat = (o) => keep(new T.ShaderMaterial({ toneMapped: false, ...o }));
 
   // --- shell: walls, ceiling, light columns and rings
+  // the sky is evaluated once, at high resolution, instead of for every pixel of every frame
+  function bakeSky(w, h, nebScale, nebPeriod, starScale) {
+    const rt = keep(new T.WebGLRenderTarget(w, h, { generateMipmaps: true, minFilter: T.LinearMipmapLinearFilter, magFilter: T.LinearFilter, depthBuffer: false, stencilBuffer: false, wrapS: T.RepeatWrapping, wrapT: T.RepeatWrapping, anisotropy: Math.min(8, renderer.capabilities.getMaxAnisotropy()) }));
+    const mat = new T.ShaderMaterial({ vertexShader: SKY_BAKE_VS, fragmentShader: SKY_BAKE_FS, depthTest: false, depthWrite: false, toneMapped: false,
+      uniforms: { uNebScale: { value: new T.Vector2(...nebScale) }, uNebPeriod: { value: new T.Vector2(...nebPeriod) }, uStarScale: { value: new T.Vector2(...starScale) } } });
+    const geo = new T.PlaneGeometry(2, 2), quad = new T.Mesh(geo, mat); quad.frustumCulled = false;
+    renderer.setRenderTarget(rt); renderer.render(quad, new T.OrthographicCamera(-1, 1, 1, -1, 0, 1)); renderer.setRenderTarget(null);
+    mat.dispose(); geo.dispose();
+    return rt.texture;
+  }
+  const wallSky = bakeSky(small ? 4096 : 8192, small ? 1024 : 2048, [16, 2.4], [16, 1000], [300, 62]);
+  const ceilSky = bakeSky(small ? 2048 : 4096, small ? 2048 : 4096, [5, 5], [5, 5], [110, 110]);
   const shell = new T.Mesh(keep(new T.CylinderGeometry(R, R, HEIGHT, N, 1, true)),
-    shaderMat({ uniforms: { uTime: shared.uTime, uColA: shared.uColA, uColB: shared.uColB }, vertexShader: UV_VS, fragmentShader: SHELL_FS, side: T.BackSide }));
+    shaderMat({ uniforms: { uSky: { value: wallSky }, uTime: shared.uTime, uColA: shared.uColA, uColB: shared.uColB }, vertexShader: UV_VS, fragmentShader: SHELL_FS, side: T.BackSide }));
   shell.position.y = HEIGHT / 2; shell.rotation.y = Math.PI / N + (N % 2 ? Math.PI : 0); scene.add(shell);
 
   const ceil = new T.Mesh(keep(new T.CircleGeometry(R + 0.4, 64)),
-    shaderMat({ uniforms: { uTime: shared.uTime, uBurst: shared.uBurst, uColA: shared.uColA, uColB: shared.uColB }, vertexShader: UV_VS, fragmentShader: CEIL_FS }));
+    shaderMat({ uniforms: { uSky: { value: ceilSky }, uTime: shared.uTime, uBurst: shared.uBurst, uColA: shared.uColA, uColB: shared.uColB }, vertexShader: UV_VS, fragmentShader: CEIL_FS }));
   ceil.rotation.x = Math.PI / 2; ceil.position.y = HEIGHT; scene.add(ceil);
 
   // --- the orb, with the page's wire shell around it
@@ -1015,6 +1044,7 @@ async function buildRoom() {
   const orbHi = new T.Mesh(keep(small ? new T.SphereGeometry(1, 192, 128) : new T.SphereGeometry(1, 320, 220)), orbMat);
   const orbLo = new T.Mesh(keep(new T.SphereGeometry(1, 64, 48)), orbMat); // used in the mirror pass
   orbLo.visible = false; orb.add(orbHi, orbLo);
+  [orbHi, orbLo].forEach(m => { m.geometry.boundingSphere = new T.Sphere(new T.Vector3(), 2); });
   const wire = new T.Mesh(keep(new T.IcosahedronGeometry(2.3 / 1.6, 2)), keep(new T.MeshBasicMaterial({ color: 0x8b7cff, wireframe: true, transparent: true, opacity: 0.08, depthWrite: false })));
   orb.add(wire);
 
@@ -1027,11 +1057,15 @@ async function buildRoom() {
       gr.addColorStop(0, 'rgba(255,255,255,0.13)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
       g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
     }
+    g.globalCompositeOperation = 'destination-in';
+    const fade = g.createRadialGradient(64, 64, 18, 64, 64, 64);
+    fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = fade; g.fillRect(0, 0, 128, 128);
     return keep(new T.CanvasTexture(c));
   })();
   const hazes = [];
   for (let i = 0, n = small ? 4 : 8; i < n; i++) {
-    const m = keep(new T.SpriteMaterial({ map: hazeTex, blending: T.AdditiveBlending, transparent: true, depthWrite: false, toneMapped: false, rotation: Math.random() * TAU }));
+    const m = keep(new T.SpriteMaterial({ map: hazeTex, blending: T.AdditiveBlending, transparent: true, depthWrite: false, depthTest: false, toneMapped: false, rotation: Math.random() * TAU }));
     const h = new T.Sprite(m), a = (i / n) * TAU, r = 3.2 + (i % 3) * 1.4;
     h.position.set(Math.cos(a) * r, 3.4 + (i % 2) * 1.5, Math.sin(a) * r);
     h.scale.setScalar(8 + (i % 3) * 2.5);
@@ -1076,10 +1110,10 @@ async function buildRoom() {
   const floor = new T.Mesh(keep(new T.CircleGeometry(R + 0.4, 64)), shaderMat({ uniforms: floorUni, vertexShader: FLOOR_VS, fragmentShader: floorFS(small ? 4 : 8) }));
   floor.rotation.x = -Math.PI / 2; scene.add(floor);
   const virt = new T.PerspectiveCamera();
-  const _p = new T.Vector3(), _d = new T.Vector3(), _u = new T.Vector3(), _t = new T.Vector3();
+  const _p = new T.Vector3(), _d = new T.Vector3(), _u = new T.Vector3(), _t = new T.Vector3(), _q = new T.Quaternion();
   function renderMirror() {
     camera.getWorldPosition(_p); camera.getWorldDirection(_d);
-    _u.set(0, 1, 0).applyQuaternion(camera.getWorldQuaternion(new T.Quaternion()));
+    _u.set(0, 1, 0).applyQuaternion(camera.getWorldQuaternion(_q));
     virt.position.set(_p.x, -_p.y, _p.z);
     virt.up.set(_u.x, -_u.y, _u.z);
     virt.lookAt(_t.set(_p.x + _d.x, -_p.y - _d.y, _p.z + _d.z));
@@ -1128,6 +1162,7 @@ async function buildRoom() {
       const oc = el('canvas'); oc.width = w2; oc.height = h2;
       const og = oc.getContext('2d'); og.scale(ls, ls);
       const nt = keep(new T.CanvasTexture(oc)); nt.colorSpace = T.SRGBColorSpace; nt.generateMipmaps = false; nt.minFilter = T.LinearFilter;
+      renderer.initTexture(nt);               // its GPU memory is reserved now, not on arrival at this wall
       numLayer = { clean, og, nt, ls, items: cnt, t: 1 };
       cnt.forEach(k => mono(g, num(k.b), k.x, k.y, k.w, k.o));
     }
@@ -1139,7 +1174,6 @@ async function buildRoom() {
     mesh.userData = { wall: i, zones, u, base: new T.Vector3(-Math.sin(a) * AP, EYE, -Math.cos(a) * AP), n: new T.Vector3(Math.sin(a), 0, Math.cos(a)), numLayer };
     mesh.position.copy(mesh.userData.base);
     mesh.rotation.y = a;
-    mesh.frustumCulled = false;
     const proxy = new T.Mesh(proxyGeo); proxy.visible = false; proxy.userData.panel = mesh; mesh.add(proxy);
     scene.add(mesh); panels.push(mesh); proxies.push(proxy);
     renderer.initTexture(tex);               // upload now, in slices, instead of one long hitch on the first frame
@@ -1175,6 +1209,7 @@ async function buildRoom() {
   const chartC = el('canvas'); chartC.width = chartW; chartC.height = chartH;
   const chartG = chartC.getContext('2d');
   const chartTex = keep(new T.CanvasTexture(chartC)); chartTex.colorSpace = T.SRGBColorSpace; chartTex.anisotropy = maxAniso;
+  renderer.initTexture(chartTex);
   const tradingPanel = panels[WALL_TRADING], tp = tradingPanel.userData.u;
   tp.uLive.value = chartTex; tp.uLiveRect.value.copy(rectUv(CHART)); tp.uLiveOn.value = 1;
   tp.uFlex.value = 0;   // this wall stays rigid so nothing can rise over the candles
@@ -1224,6 +1259,7 @@ async function buildRoom() {
   }
 
   // One point of light per closed trade, from the per-strategy counts the page already shows
+  let lightsObj = null;
   const lightPts = tradeLights();
   const lightUni = { uTime: shared.uTime, uSize: { value: 40 }, uShow: { value: 1 }, uCount: { value: Math.max(1, lightPts.length) } };
   if (lightPts.length) {
@@ -1238,7 +1274,7 @@ async function buildRoom() {
     lg.setAttribute('position', new T.BufferAttribute(lp, 3)); lg.setAttribute('aColor', new T.BufferAttribute(lc, 3));
     lg.setAttribute('aScale', new T.BufferAttribute(ls, 1)); lg.setAttribute('aIdx', new T.BufferAttribute(li, 1));
     const lights = new T.Points(lg, shaderMat({ uniforms: lightUni, vertexShader: LIGHTS_VS, fragmentShader: LIGHTS_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
-    lights.frustumCulled = false; tradingPanel.add(lights);
+    lights.frustumCulled = false; tradingPanel.add(lights); lightsObj = lights;
   }
 
   const live = { alive: true, data: null, failed: false };
@@ -1249,10 +1285,15 @@ async function buildRoom() {
   let arrival = { t: 1 };   // candles, then trades, on every arrival at the Trading wall
   async function refreshChart() {
     if (!live.alive || document.hidden || document.body.classList.contains('is-asleep')) return;
+    const off = Math.abs(((s.wall - WALL_TRADING + N + N / 2) % N) - N / 2);
+    if (live.data && off > 1) return;
     try {
       const data = await fetchCandles();
       if (!live.alive) return;
-      const first = !live.data;
+      const first = !live.data, lastC = data.candles[data.candles.length - 1];
+      const key = `${data.candles[0].t}:${lastC.t}:${lastC.o}:${lastC.h}:${lastC.l}:${lastC.c}`;
+      if (key === live.key) return;
+      live.key = key;
       live.data = data; live.failed = false;
       layoutBars(data);
       if (first && s.wall === WALL_TRADING) arrival.t = 0;
@@ -1264,6 +1305,7 @@ async function buildRoom() {
   const tickC = el('canvas'); tickC.width = tickW; tickC.height = Math.round(tickW * TICK.h / TICK.w);
   const tickG = tickC.getContext('2d');
   const tickTex = keep(new T.CanvasTexture(tickC)); tickTex.colorSpace = T.SRGBColorSpace;
+  renderer.initTexture(tickTex);
   const hp = panels[0].userData.u;
   hp.uLive.value = tickTex; hp.uLiveRect.value.copy(rectUv(TICK)); hp.uLiveOn.value = 1;
   let tickShown = '';
@@ -1301,7 +1343,6 @@ async function buildRoom() {
     const tex = keep(new T.CanvasTexture(c)); tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = maxAniso;
     const u = panelUniforms(tex, i * 2.1, PLATE.w / PLATE.h, slabEdge(PLATE_W, PLATE_H, PLATE_EDGE, PLATE.w / PLATE.h));
     const mesh = new T.Mesh(plateGeo, panelMat(u));
-    mesh.frustumCulled = false;
     mesh.userData = { plate: i, u, rise: 0, x: 0, y: 1.72, z: 0, k: 1, yaw: 0, nx: 0, nz: 1, zones: [], milestone: new T.Vector2() };
     const proxy = new T.Mesh(plateProxy); proxy.visible = false; proxy.userData.panel = mesh; mesh.add(proxy);
     scene.add(mesh); plates.push(mesh);
@@ -1310,6 +1351,7 @@ async function buildRoom() {
     const nc = el('canvas'); nc.width = nc.height = 128;
     const ng = nc.getContext('2d'); ng.font = `500 92px ${SANS}`; ng.textAlign = 'center'; ng.textBaseline = 'middle'; ng.fillStyle = '#fff'; ng.fillText(String(i + 1), 64, 68);
     const nt = keep(new T.CanvasTexture(nc));
+    renderer.initTexture(nt);
     const ball = new T.Mesh(sphereGeo, shaderMat({ uniforms: { uNum: { value: nt }, uColA: shared.uColA, uColB: shared.uColB, uOn: { value: 0 }, uMirror: orbUniforms.uMirror }, vertexShader: MILE_VS, fragmentShader: MILE_FS }));
     ball.userData.phase = i * 1.3;
     scene.add(ball); spheres.push(ball);
@@ -1455,25 +1497,17 @@ async function buildRoom() {
   let hintTimer = setTimeout(() => hintEl.classList.add('is-off'), 10000);
   function hideHint() { clearTimeout(hintTimer); hintTimer = setTimeout(() => hintEl.classList.add('is-off'), 1800); }
 
-  // --- adaptive quality: drops resolution before it would ever drop frames
-  const TIERS = [
-    { pr: 2.5, refl: 1080, every: 1, pts: 1 },
-    { pr: 2, refl: 720, every: 1, pts: 1 },
-    { pr: 1.5, refl: 512, every: 1, pts: 1 },
-    { pr: 1.25, refl: 360, every: 2, pts: 0.7 },
-    { pr: 1, refl: 256, every: 3, pts: 0.4 },
-  ];
-  let tier = 0, frameNo = 0, mirrorFresh = false;
+  // --- image quality is fixed at its highest; nothing lowers it at run time
+  const QUALITY = { pr: 2.5, refl: 1080 };
   function applySize() {
     // standard-density desktop screens render above their native resolution, for clean edges and text
-    const { w, h } = size(), T0 = TIERS[tier], pr = Math.min(small ? devicePixelRatio : Math.max(devicePixelRatio, 1.5), T0.pr);
+    const { w, h } = size(), T0 = QUALITY, pr = Math.min(small ? devicePixelRatio : Math.max(devicePixelRatio, 1.5), T0.pr);
     renderer.setPixelRatio(pr); renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
     const rh = Math.min(T0.refl, h * pr), rw = Math.round(rh * w / h);
     reflRT.setSize(rw, Math.round(rh));
     pUni.uSize.value = 30 * pr; pUni.uMax.value = 7 * pr;
     lightUni.uSize.value = 110 * pr;
-    pgeo.setDrawRange(0, Math.floor(PCOUNT * T0.pts));
   }
   const ro = new ResizeObserver(() => { applySize(); layoutCareer(); applyMode(); });
   ro.observe(ui);
@@ -1682,7 +1716,7 @@ async function buildRoom() {
     moveInd(i);
     startCount(panels[i]);                 // numbers count up on every arrival
     panels[i].userData.u.uSheen.value = 0;
-    if (i === WALL_TRADING && !reduceMotion) arrival.t = 0;
+    if (i === WALL_TRADING && !reduceMotion) { arrival.t = 0; refreshChart(); }
   }
   setWall(0);
   paintChart(); refreshChart();
@@ -1690,10 +1724,36 @@ async function buildRoom() {
   on(window, 'resize', () => moveInd(s.wall));
 
   // Everything is built: compile shaders while the loader is still up so the first frame does not hitch
-  scene.updateMatrixWorld();
-  renderer.compile(scene, camera);
+  scene.updateMatrixWorld(true);
+  try { await renderer.compileAsync(scene, camera); } catch (e) { /* falls back to compiling on first use */ }
+  if (!ui || closing) { dispose(); return null; }
+  {
+    const warmRT = keep(new T.WebGLRenderTarget(8, 8)), warmCam = new T.PerspectiveCamera(100, 1, 0.1, 100);
+    warmCam.position.set(0, EYE, 0); warmCam.updateMatrixWorld();
+    const counts = [bodyGeo, wickGeo, haloGeo].map(g => g.instanceCount);
+    [bodyGeo, wickGeo, haloGeo].forEach(g => { g.instanceCount = Math.max(1, g.instanceCount); });
+    const items = [shell, ceil, floor, orbHi, particles, panels[0], plates[0], spheres[0], holo, hazes[0]];
+    if (lightsObj) items.push(lightsObj);
+    for (const item of items) {
+      if (!item) continue;
+      const culled = [];
+      item.traverse(o => { culled.push([o, o.frustumCulled]); o.frustumCulled = false; });
+      renderer.setRenderTarget(warmRT); renderer.render(item, warmCam); renderer.setRenderTarget(null);
+      culled.forEach(([o, f]) => { o.frustumCulled = f; });
+      await new Promise(r => setTimeout(r));
+      if (!ui || closing) { dispose(); return null; }
+    }
+    // once more with everything in view, to the screen and to the mirror's target, since each can need its own variant
+    const culledAll = [];
+    scene.traverse(o => { culledAll.push([o, o.frustumCulled]); o.frustumCulled = false; });
+    floorUni.uPathOn.value = 1;
+    renderMirror(); renderer.render(scene, camera);
+    floorUni.uPathOn.value = 0;
+    culledAll.forEach(([o, f]) => { o.frustumCulled = f; });
+    [bodyGeo, wickGeo, haloGeo].forEach((g, i) => { g.instanceCount = counts[i]; });
+  }
   setLoad(1);
-  await new Promise(r => setTimeout(r, 120));
+  await new Promise(r => setTimeout(r, 60));
   if (!ui || closing) { dispose(); return null; }
 
   // --- render loop
@@ -1703,7 +1763,7 @@ async function buildRoom() {
   const tmpA = new T.Color(), tmpB = new T.Color();
   const smooth = (a, b, dt, r) => a + (b - a) * (1 - Math.exp(-r * dt));
   const speed = reduceMotion ? 0.2 : 1;
-  let time = 0, startedAt = -1, frameSum = 0, frameCount = 0, perfWindow = 0, slowWindows = 0;
+  let time = 0, startedAt = -1;
   s.burst = 0;
 
   renderer.setAnimationLoop(() => {
@@ -1713,18 +1773,6 @@ async function buildRoom() {
     if (startedAt < 0) startedAt = time;
     const since = time - startedAt;
     shared.uTime.value = time;
-
-    // quality governor (skips the opening seconds and hidden-tab gaps)
-    if (since > 2 && raw < 0.25) {
-      frameSum += raw; frameCount++; perfWindow += raw;
-      if (perfWindow > 1.2) {
-        const avg = frameSum / frameCount;
-        // only sustained slowness lowers the quality, not a single hiccup
-        slowWindows = avg > 1 / 42 ? slowWindows + 1 : 0;
-        if (slowWindows >= 2 && tier < TIERS.length - 1) { tier++; slowWindows = 0; applySize(); }
-        frameSum = 0; frameCount = 0; perfWindow = 0;
-      }
-    }
 
     // camera
     // arrow keys: forward, back and sideways relative to where the camera looks
@@ -1803,6 +1851,8 @@ async function buildRoom() {
       if (u.uSheen.value < 1) u.uSheen.value = Math.min(1, u.uSheen.value + dt / 1.1);
       if (u.uRip.value.z >= 0) { u.uRip.value.z += dt; if (u.uRip.value.z > 2) u.uRip.value.z = -1; }
     });
+    const tradingNear = Math.abs(shortest(s.yaw + WALL_TRADING * STEP)) < STEP * 2.4;
+    holo.visible = tradingNear; if (lightsObj) lightsObj.visible = tradingNear;
     // Trading arrival: candles grow out one by one, then the real trades light up in order
     if (arrival.t < 1) arrival.t = Math.min(1, arrival.t + dt / 4.2);
     barUni.uGrow.value = Math.min(1, arrival.t / 0.62);
@@ -1843,13 +1893,11 @@ async function buildRoom() {
       else if (!coarse) setCursor(false, '');
     }
 
-    // mirror pass: skipped when the floor is off-screen (zoomed in on a wall), and throttled on the lowest tiers
+    // mirror pass: skipped only when the floor is completely off-screen
     scene.updateMatrixWorld();
-    frameNo++;
     const below = rad(s.fov) / 2 - s.pitch, camY = camera.position.y;
     const floorSeen = s.walking || s.mode === 'plate' || (below > 0 && camY / Math.tan(below) < dist + 0.4);
-    if (floorSeen && (!mirrorFresh || frameNo % TIERS[tier].every === 0)) { renderMirror(); mirrorFresh = true; }
-    if (!floorSeen) mirrorFresh = false;
+    if (floorSeen) renderMirror();
     renderer.render(scene, camera);
   });
 
