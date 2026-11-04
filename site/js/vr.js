@@ -267,7 +267,7 @@ const WALLS = [
     zones.push({ x: d.x, y: d.y, w: d.w, h: d.h, d: DEPTH });
   },
 
-  // Selecting this wall brings up the jobs: a path of light with nebula spheres and one standing plate each (see buildRoom)
+  // Selecting this wall brings up the jobs: a path of light with balls of gas and one standing plate each (see buildRoom)
   function experience(g) {
     mono(g, '03', 90, 90, 200, { size: 26, color: C.accent });
     const title = $$('#experience .section__title .split').map(txt).join(' ');
@@ -617,42 +617,78 @@ const LIGHTS_FS = /* glsl */`
     #include <colorspace_fragment>
   }`;
 
-// Career milestones: small spheres of slowly drifting green nebula, in a domain-warped noise that is cheap at this size
+// Career milestones: balls of green gas. The mesh is only a bounding shell: each pixel marches its ray through the real
+// volume, so there is no surface and no hard edge, just density thinning out from a bright core. Motes drift around it.
 const MILE_VS = /* glsl */`
-  varying vec3 vN, vV, vP;
+  varying vec3 vW, vC; varying float vR;
   void main(){
-    vN = normalMatrix * normal;
-    vP = normal;
-    vec4 mv = modelViewMatrix * vec4(position, 1.0);
-    vV = -mv.xyz;
-    gl_Position = projectionMatrix * mv;
+    vec4 w = modelMatrix * vec4(position, 1.0);
+    vW = w.xyz;
+    vC = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    vR = length((modelMatrix * vec4(position, 0.0)).xyz);
+    gl_Position = projectionMatrix * viewMatrix * w;
   }`;
-const MILE_FS = /* glsl */`
+const mileFS = steps => /* glsl */`
   uniform float uOn, uMirror, uTime, uSeed;
-  varying vec3 vN, vV, vP;
+  varying vec3 vW, vC; varying float vR;
   float h31(vec3 p){ p = fract(p * 0.3183099 + 0.1) * 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
   float n3(vec3 p){
     vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
     return mix(mix(mix(h31(i), h31(i + vec3(1.0, 0.0, 0.0)), f.x), mix(h31(i + vec3(0.0, 1.0, 0.0)), h31(i + vec3(1.0, 1.0, 0.0)), f.x), f.y),
                mix(mix(h31(i + vec3(0.0, 0.0, 1.0)), h31(i + vec3(1.0, 0.0, 1.0)), f.x), mix(h31(i + vec3(0.0, 1.0, 1.0)), h31(i + vec3(1.0)), f.x), f.y), f.z);
   }
-  float fbm(vec3 p){ return n3(p) * 0.64 + n3(p * 2.03 + 3.1) * 0.27 + n3(p * 4.01 + 7.7) * 0.09; }
   void main(){
-    vec3 N = normalize(vN), V = normalize(vV);
-    float fres = pow(1.0 - max(dot(N, V), 0.0), 2.5);
-    vec3 L = normalize(vec3(0.35, 0.55, 0.75));
-    float diff = max(dot(N, L), 0.0);
-    vec3 p = normalize(vP) * 1.35 + uSeed;
-    float t = uTime * 0.09;
-    vec2 warp = vec2(fbm(p + t), fbm(p + 5.2 - t));
-    float neb = smoothstep(0.24, 0.78, fbm(p + vec3(warp, warp.x - warp.y) * 1.25));
-    vec3 col = mix(vec3(0.015, 0.14, 0.11), vec3(0.05, 0.46, 0.34), neb);   // deep emerald into jade
-    col = mix(col, vec3(0.45, 1.0, 0.74), neb * neb * neb * 0.6);            // bright mint where the gas is densest
-    col *= 0.6 + diff * 0.55;
-    col += vec3(0.2, 0.92, 0.62) * fres * 1.05;                              // soft glowing rim
-    col *= 1.0 + uOn * 0.6;
-    col += vec3(0.8, 1.0, 0.9) * pow(max(dot(N, normalize(L + V)), 0.0), 70.0) * 0.45;
-    gl_FragColor = vec4(uMirror > 0.5 ? pow(max(col, vec3(0.0)), vec3(2.2)) : col, 1.0);
+    vec3 ro = (cameraPosition - vC) / vR, rd = normalize(vW - cameraPosition);
+    float b = dot(ro, rd), h = b * b - dot(ro, ro) + 1.0;
+    if (h <= 0.0) discard;
+    h = sqrt(h);
+    float t0 = max(-b - h, 0.0), t1 = -b + h;
+    if (t1 <= t0) discard;
+    float dt = (t1 - t0) / float(${steps});
+    float t = t0 + dt * fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));   // hides the step banding
+    float ca = cos(uTime * 0.11 + uSeed), sa = sin(uTime * 0.11 + uSeed);
+    vec3 acc = vec3(0.0); float T = 1.0;
+    for (int i = 0; i < ${steps}; i++, t += dt) {
+      vec3 p = ro + rd * t;
+      float r = length(p);
+      if (r >= 1.0) continue;
+      vec3 q = vec3(ca * p.x - sa * p.z, p.y - uTime * 0.05, sa * p.x + ca * p.z) * 1.55 + uSeed;
+      float n = n3(q) * 0.6 + n3(q * 2.3 + 4.7) * 0.4;
+      float dens = smoothstep(0.0, 0.75, 1.0 - r + (n - 0.5) * 0.42);   // noise eats into the edge: wisps, not a rim
+      if (dens <= 0.0) continue;
+      vec3 c = mix(vec3(0.02, 0.42, 0.5), vec3(0.05, 0.8, 0.5), smoothstep(0.92, 0.45, r));   // teal haze into jade
+      c = mix(c, vec3(0.8, 1.0, 0.86), smoothstep(0.55, 0.08, r));                                // luminous mint core
+      c *= 0.9 + p.y * 0.35;                                                                      // lit from above
+      float a = 1.0 - exp(-dens * dt * 3.6);
+      acc += T * a * c;
+      T *= 1.0 - a;
+    }
+    float A = 1.0 - T;
+    if (A < 0.004) discard;
+    acc *= 1.0 + uOn * 0.6;
+    if (uMirror > 0.5) acc = pow(max(acc / A, vec3(0.0)), vec3(2.2)) * A;
+    gl_FragColor = vec4(acc, A);
+  }`;
+const MOTE_VS = /* glsl */`
+  uniform float uTime, uSeed, uSize, uMax, uOn;
+  attribute float aSeed;
+  varying float vA; varying vec3 vC;
+  void main(){
+    float a = uTime * (0.1 + aSeed * 0.28) + uSeed;
+    vec3 p = position;
+    p.xz = mat2(cos(a), -sin(a), sin(a), cos(a)) * p.xz;
+    p.y += sin(uTime * (0.25 + aSeed * 0.4) + aSeed * 40.0) * 0.05;
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    gl_PointSize = min(uSize * 0.42 * (0.45 + aSeed * 1.05) * length(modelMatrix[0].xyz) / -mv.z, uMax);
+    vA = (0.25 + 0.75 * abs(sin(uTime * (0.4 + aSeed) + aSeed * 60.0))) * (0.75 + uOn * 0.25) * smoothstep(0.3, 1.2, -mv.z);
+    vC = mix(vec3(0.3, 0.95, 0.72), vec3(0.85, 1.0, 0.92), aSeed * aSeed);
+    gl_Position = projectionMatrix * mv;
+  }`;
+const MOTE_FS = /* glsl */`
+  varying float vA; varying vec3 vC;
+  void main(){
+    float a = smoothstep(0.5, 0.0, length(gl_PointCoord - 0.5));
+    gl_FragColor = vec4(vC, a * a * vA);
   }`;
 
 // Mirror floor: planar reflection (the room re-rendered from below the floor), which gives the exact
@@ -1133,10 +1169,10 @@ async function buildRoom() {
     virt.updateMatrixWorld();
     texMat.set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
     texMat.multiply(virt.projectionMatrix).multiply(virt.matrixWorldInverse);
-    floor.visible = false; particles.visible = false; orbHi.visible = false; orbLo.visible = true; wire.visible = false; orbUniforms.uMirror.value = 1;
+    floor.visible = false; particles.visible = false; motes.forEach(m => { m.visible = false; }); orbHi.visible = false; orbLo.visible = true; wire.visible = false; orbUniforms.uMirror.value = 1;
     hazes.forEach(h => { h.visible = false; });
     renderer.setRenderTarget(reflRT); renderer.clear(); renderer.render(scene, virt); renderer.setRenderTarget(null);
-    floor.visible = true; particles.visible = true; orbHi.visible = true; orbLo.visible = false; wire.visible = true; orbUniforms.uMirror.value = 0;
+    floor.visible = true; particles.visible = true; motes.forEach(m => { m.visible = true; }); orbHi.visible = true; orbLo.visible = false; wire.visible = true; orbUniforms.uMirror.value = 0;
     hazes.forEach(h => { h.visible = true; });
   }
 
@@ -1334,7 +1370,7 @@ async function buildRoom() {
   paintTicker();
   const tickTimer = setInterval(paintTicker, 2000);
 
-  // --- career: one standing plate and one nebula sphere per job, oldest first. layoutCareer() places them so that
+  // --- career: one standing plate and one ball of gas per job, oldest first. layoutCareer() places them so that
   // all of them can be seen at once from where the camera stands when facing this wall.
   const pa = -WALL_PATH * STEP;
   const axis = new T.Vector2(-Math.sin(pa), -Math.cos(pa)), right = new T.Vector2(-axis.y, axis.x);
@@ -1342,10 +1378,18 @@ async function buildRoom() {
   floorUni.uAxis.value.copy(axis); floorUni.uRight.value.copy(right); floorUni.uArcC.value.copy(viewC);
   const jobs = jobEls().slice(0, 5).reverse();
   const PLATE = { w: 2.56, h: 1.6 };
-  const plates = [], spheres = [];
+  const plates = [], spheres = [], motes = [];
   const plateProxy = keep(new T.PlaneGeometry(PLATE.w, PLATE.h));
   const plateGeo = keep(slabGeometry(T, PLATE.w, PLATE.h, PLATE_W, PLATE_H, [], 0.14, PLATE_EDGE, 8, 5));
-  const sphereGeo = keep(new T.SphereGeometry(0.24, 32, 24));
+  const sphereGeo = keep(new T.SphereGeometry(0.46, 24, 16));
+  const moteN = small ? 70 : 150, motePos = new Float32Array(moteN * 3), moteSeed = new Float32Array(moteN);
+  for (let i = 0; i < moteN; i++) {
+    const r = 0.14 + Math.pow(Math.random(), 0.7) * 0.42, y = Math.random() * 2 - 1, th = Math.random() * TAU, q = Math.sqrt(1 - y * y);
+    motePos.set([Math.cos(th) * q * r, y * r, Math.sin(th) * q * r], i * 3); moteSeed[i] = Math.random();
+  }
+  const moteGeo = keep(new T.BufferGeometry());
+  moteGeo.setAttribute('position', new T.BufferAttribute(motePos, 3));
+  moteGeo.setAttribute('aSeed', new T.BufferAttribute(moteSeed, 1));
   jobs.forEach((j, i) => {
     const plateK = small ? 1.5 : 2;
     const c = el('canvas'); c.width = PLATE_W * plateK; c.height = PLATE_H * plateK;
@@ -1359,7 +1403,10 @@ async function buildRoom() {
     scene.add(mesh); plates.push(mesh);
     renderer.initTexture(tex);
     c.width = c.height = 1;                  // uploaded: the GPU copy is all that is needed
-    const ball = new T.Mesh(sphereGeo, shaderMat({ uniforms: { uTime: shared.uTime, uSeed: { value: i * 3.7 }, uOn: { value: 0 }, uMirror: orbUniforms.uMirror }, vertexShader: MILE_VS, fragmentShader: MILE_FS }));
+    const seed = { value: i * 3.7 }, on = { value: 0 };
+    const ball = new T.Mesh(sphereGeo, shaderMat({ uniforms: { uTime: shared.uTime, uSeed: seed, uOn: on, uMirror: orbUniforms.uMirror }, vertexShader: MILE_VS, fragmentShader: mileFS(small ? 5 : 8), transparent: true, premultipliedAlpha: true, depthWrite: false, side: T.BackSide }));
+    const mote = new T.Points(moteGeo, shaderMat({ uniforms: { uTime: shared.uTime, uSeed: seed, uOn: on, uSize: pUni.uSize, uMax: pUni.uMax }, vertexShader: MOTE_VS, fragmentShader: MOTE_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
+    mote.frustumCulled = false; mote.renderOrder = 1; ball.add(mote); motes.push(mote);
     ball.userData.phase = i * 1.3;
     scene.add(ball); spheres.push(ball);
   });
@@ -1394,7 +1441,7 @@ async function buildRoom() {
     spheres.forEach((b, i) => {
       const a = (i - (spheres.length - 1) / 2) * stepA;
       const x = viewC.x + (axis.x * Math.cos(a) + right.x * Math.sin(a)) * arcR, z = viewC.y + (axis.y * Math.cos(a) + right.y * Math.sin(a)) * arcR;
-      b.position.x = x; b.position.z = z; b.userData.base = 0.42;
+      b.position.x = x; b.position.z = z; b.userData.base = 0.52;
       plates[i].userData.milestone.set(x, z);
       floorUni.uMiles.value[i].x = x; floorUni.uMiles.value[i].y = z;
     });
@@ -1534,7 +1581,7 @@ async function buildRoom() {
     if (oh && (!hit || oh.distanceTo(ray.ray.origin) < hit.distance)) return { orb: true };
     for (let i = 0; i < spheres.length; i++) {
       if (!spheres[i].visible) continue;
-      const b = ray.ray.intersectSphere(_sph.set(spheres[i].position, 0.34), orbHit);
+      const b = ray.ray.intersectSphere(_sph.set(spheres[i].position, 0.42), orbHit);
       if (b && (!hit || b.distanceTo(ray.ray.origin) < hit.distance)) return { panel: plates[i], plate: i, uv: _mid };
     }
     let point = null;
@@ -1739,7 +1786,7 @@ async function buildRoom() {
     warmCam.position.set(0, EYE, 0); warmCam.updateMatrixWorld();
     const counts = [bodyGeo, wickGeo, haloGeo].map(g => g.instanceCount);
     [bodyGeo, wickGeo, haloGeo].forEach(g => { g.instanceCount = Math.max(1, g.instanceCount); });
-    const items = [shell, ceil, floor, orbHi, particles, panels[0], plates[0], spheres[0], holo, hazes[0]];
+    const items = [shell, ceil, floor, orbHi, particles, panels[0], plates[0], spheres[0], motes[0], holo, hazes[0]];
     if (lightsObj) items.push(lightsObj);
     for (const item of items) {
       if (!item) continue;
