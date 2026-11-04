@@ -42,6 +42,8 @@ render.yaml                                  # Blueprint de Render
 ## Sala VR (opcional)
 
 El botón **VR** (abajo a la derecha) abre una sala virtual con las secciones del sitio en sus paredes, leídas del propio HTML
-(sigue el idioma y los datos en vivo). Mouse: arrastrar para mirar, rueda para zoom. Celular: giroscopio o arrastrar, pellizcar para zoom.
+(sigue el idioma y los datos en vivo). El orbe de la página cuelga del techo y cambia de forma y color según la pared; el suelo es
+un espejo en tiempo real. Se navega solo con mouse o pantalla táctil: arrastrar/deslizar para girar, rueda/pellizco para acercar,
+clic/toque en una pared o tarjeta para entrar.
 
 Para quitarla: borrar `site/js/vr.js`, `site/css/vr.css` y las dos líneas marcadas `VR room` al final de `site/index.html`.
