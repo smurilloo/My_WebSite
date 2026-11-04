@@ -2,7 +2,7 @@
 
 Usage: python live/update_live.py <path to trades.sqlite>
 
-Reads the closed trades of every strategy since config.json "since" from the public
+Reads the closed trades of the strategies listed in config.json since its "since" from the public
 ledger the trading repo publishes (net_pnl_pct_account: net of fees and funding, as a
 % of the account at entry), adds them up per strategy and replaces everything
 between the live:start / live:end markers in site/index.html. Prints "changed" or
@@ -23,7 +23,6 @@ START, END = "<!-- live:start -->", "<!-- live:end -->"
 # Spanish lives in the markup; English comes from the same data-i18n keys in site/js/i18n.js.
 NAMES = {
     "S1": ("sx.s1", "Giros en extremos"),
-    "S2": ("sx.s2", "Momentum de serie temporal"),
     "S4": ("sx.s4", "Rupturas con impulso"),
 }
 
@@ -40,7 +39,7 @@ def load_trades(db_path, cfg):
         "WHERE status = 'CLOSED' AND exit_ts_utc IS NOT NULL AND net_pnl_pct_account IS NOT NULL"
     ).fetchall()
     con.close()
-    return [(s, epoch(ts), float(pct)) for s, ts, pct in rows if epoch(ts) >= since]
+    return [(s, epoch(ts), float(pct)) for s, ts, pct in rows if s in cfg["strategies"] and epoch(ts) >= since]
 
 
 
@@ -75,7 +74,7 @@ def render(trades, cfg):
         'Operativa real en Bitget · capital real</span></span><span><span data-i18n="rl.period">'
         f'Desde el {cfg["since"]} · solo trades cerrados · último cierre:</span> {last}</span></p>\n',
         '        <div class="strats">\n',
-        card("Total", "rl.all", "Cuenta completa", total,
+        card("Total", "rl.all", "Estrategias activas", total,
              f"{n_trades(len(trades))} · {' + '.join(order) or '—'}", label_key="rl.total"),
     ]
     for sid in order:

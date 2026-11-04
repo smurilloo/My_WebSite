@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=10">
+  <link rel="stylesheet" href="css/main.css?v=11">
 </head>
 <body class="is-loading">
 
@@ -138,7 +138,7 @@
       <header class="section__head">
         <span class="section__idx mono">02</span>
         <h2 class="section__title"><span class="split" data-i18n="trading.title">Tradester</span></h2>
-        <p class="section__intro reveal" data-i18n="trading.intro">Caso de estudio: mi propio bot de trading para el futuro perpetuo BTC/USDT en Bitget, con tres estrategias operando 24/7 desde una Raspberry Pi y monitoreado por un agente de IA que avisa por Telegram ante cualquier error.</p>
+        <p class="section__intro reveal" data-i18n="trading.intro">Caso de estudio: mi propio bot de trading para el futuro perpetuo BTC/USDT en Bitget, con dos estrategias operando 24/7 desde una Raspberry Pi y monitoreado por un agente de IA que avisa por Telegram ante cualquier error.</p>
       </header>
 
       <div class="trading__grid">
@@ -148,10 +148,10 @@
         </div>
 
         <div class="stats">
-          <div class="stat reveal"><b class="mono" data-count="1.69" data-dec="2">0</b><span data-i18n="st.pf">Profit factor fuera de muestra (las 3 estrategias: S1 y S4 en 2026, S2 en 2025–2026)</span></div>
-          <div class="stat reveal"><b class="mono" data-count="8.9" data-dec="1" data-prefix="+" data-suffix="%">0</b><span data-i18n="st.net">Retorno neto fuera de muestra (las 3 estrategias)</span></div>
-          <div class="stat reveal"><b class="mono" data-count="409" data-dec="0">0</b><span data-i18n="st.trades">Operaciones en total (las 3 estrategias, todos los periodos)</span></div>
-          <div class="stat reveal"><b class="mono" data-count="138.0" data-dec="1" data-prefix="+" data-suffix="%">0</b><span data-i18n="st.all">Retorno neto en todos los periodos, sin interés compuesto (incluye entrenamiento)</span></div>
+          <div class="stat reveal"><b class="mono" data-count="1.79" data-dec="2">0</b><span data-i18n="st.pf">Profit factor fuera de muestra 2026 (las 2 estrategias)</span></div>
+          <div class="stat reveal"><b class="mono" data-count="5.2" data-dec="1" data-prefix="+" data-suffix="%">0</b><span data-i18n="st.net">Retorno neto fuera de muestra 2026 (las 2 estrategias)</span></div>
+          <div class="stat reveal"><b class="mono" data-count="211" data-dec="0">0</b><span data-i18n="st.trades">Operaciones en total (las 2 estrategias, todos los periodos)</span></div>
+          <div class="stat reveal"><b class="mono" data-count="99.9" data-dec="1" data-prefix="+" data-suffix="%">0</b><span data-i18n="st.all">Retorno neto en todos los periodos, sin interés compuesto (incluye entrenamiento)</span></div>
         </div>
       </div>
 
@@ -163,14 +163,6 @@
           <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.tr14">Entrenamiento 2018–2024</span>68 trades · 62% <span data-i18n="sx.win">acierto</span> · PF 6.27 · +156.2 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
           <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.va25">Validación 2025</span>8 trades · 50% <span data-i18n="sx.win">acierto</span> · PF 3.34 · +9.9 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
           <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.te26">Prueba 2026 · fuera de muestra</span>12 trades · 42% <span data-i18n="sx.win">acierto</span> · PF 1.86 · +9.2 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
-        </div>
-        <div class="strat reveal">
-          <span class="strat__id mono">S2</span>
-          <h4 data-i18n="sx.s2">Momentum de serie temporal</h4>
-          <b class="mono" data-count="1.59" data-dec="2">0</b><span class="strat__unit mono" data-i18n="sx.u2526">PF fuera de muestra 2025–26</span>
-          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.tr">Entrenamiento 2020–2023</span>103 trades · 19% <span data-i18n="sx.win">acierto</span> · PF 3.08 · +59.2 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
-          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.va">Validación 2024</span>50 trades · 26% <span data-i18n="sx.win">acierto</span> · PF 1.75 · +9.5 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
-          <p class="strat__meta mono"><span class="strat__lab" data-i18n="sx.oos">Prueba 2025–2026 · fuera de muestra</span>45 trades · 24% <span data-i18n="sx.win">acierto</span> · PF 1.59 · +7.4 <span data-i18n="sx.r">unidades de riesgo (R)</span></p>
         </div>
         <div class="strat reveal">
           <span class="strat__id mono">S4</span>
@@ -185,24 +177,18 @@
 
       <div class="real">
         <!-- live:start -->
-        <p class="real__head mono reveal"><span class="live"><i></i><span data-i18n="rl.head">Operativa real en Bitget · capital real</span></span><span><span data-i18n="rl.period">Desde el 2026-10-15 · solo trades cerrados · último cierre:</span> 2026-11-01</span></p>
+        <p class="real__head mono reveal"><span class="live"><i></i><span data-i18n="rl.head">Operativa real en Bitget · capital real</span></span><span><span data-i18n="rl.period">Desde el 2026-10-15 · solo trades cerrados · último cierre:</span> 2026-10-30</span></p>
         <div class="strats">
           <div class="strat reveal">
             <span class="strat__id mono" data-i18n="rl.total">Total</span>
-            <h4 data-i18n="rl.all">Cuenta completa</h4>
-            <b class="mono" data-count="1.24" data-dec="2" data-prefix="+" data-suffix="%">0</b><span class="strat__unit mono" data-i18n="rl.net">neto de comisiones</span>
-            <p class="strat__meta mono">7 trades · S1 + S2 + S4</p>
+            <h4 data-i18n="rl.all">Estrategias activas</h4>
+            <b class="mono" data-count="1.55" data-dec="2" data-prefix="+" data-suffix="%">0</b><span class="strat__unit mono" data-i18n="rl.net">neto de comisiones</span>
+            <p class="strat__meta mono">4 trades · S1 + S4</p>
           </div>
           <div class="strat reveal">
             <span class="strat__id mono">S1</span>
             <h4 data-i18n="sx.s1">Giros en extremos</h4>
             <b class="mono" data-count="1.33" data-dec="2" data-prefix="+" data-suffix="%">0</b><span class="strat__unit mono" data-i18n="rl.net">neto de comisiones</span>
-            <p class="strat__meta mono">3 trades</p>
-          </div>
-          <div class="strat reveal">
-            <span class="strat__id mono">S2</span>
-            <h4 data-i18n="sx.s2">Momentum de serie temporal</h4>
-            <b class="mono" data-count="0.31" data-dec="2" data-prefix="−" data-suffix="%">0</b><span class="strat__unit mono" data-i18n="rl.net">neto de comisiones</span>
             <p class="strat__meta mono">3 trades</p>
           </div>
           <div class="strat reveal">
@@ -218,12 +204,12 @@
 
       <div class="pipeline">
         <div class="step reveal"><span class="mono">01</span><h4 data-i18n="p1.t">Datos</h4><p data-i18n="p1.d">En vivo, el bot lee en cada ciclo de 30 s velas de 15m, 1H, 4H y 1D de Bitget y el libro de órdenes (20 niveles), y lo registra todo para backtesting con datos reales; hay histórico desde 2018. Las velas de 1m también se registran, pero solo para investigación: no intervienen en ninguna decisión.</p></div>
-        <div class="step reveal"><span class="mono">02</span><h4 data-i18n="p2.t">Tres estrategias</h4><p data-i18n="p2.d">Tres estrategias independientes; solo se operan señales completamente confirmadas. S4 detecta en 15m y S1 en 1H; ambas confirman en 1H con el libro de órdenes, usan el 4H como marco superior y el régimen diario (1D) en su filtro de calidad. Además clasifican cada señal por tipo de setup del mercado, con segmentos de régimen calculados con velas de 1H y 15m, y usan parámetros propios para cada tipo. S2 decide al cierre diario con velas diarias construidas desde las de 15m, que también usa para gestionar la posición. Los criterios de entrada son confidenciales.</p></div>
+        <div class="step reveal"><span class="mono">02</span><h4 data-i18n="p2.t">Dos estrategias</h4><p data-i18n="p2.d">Dos estrategias independientes; solo se operan señales completamente confirmadas. S4 detecta en 15m y S1 en 1H; ambas confirman en 1H con el libro de órdenes, usan el 4H como marco superior y el régimen diario (1D) en su filtro de calidad. Además clasifican cada señal por tipo de setup del mercado, con segmentos de régimen calculados con velas de 1H y 15m, y usan parámetros propios para cada tipo. Los criterios de entrada son confidenciales.</p></div>
         <div class="step reveal"><span class="mono">03</span><h4 data-i18n="p3.t">Optimización GPU</h4><p data-i18n="p3.d">Motor Numba/CUDA en una RTX 4060: análisis walk-forward, bootstrapping, simulación Monte Carlo y pruebas de vecindad de parámetros.</p></div>
         <div class="step reveal"><span class="mono">04</span><h4 data-i18n="p4.t">Riesgo</h4><p data-i18n="p4.d">Riesgo por operación ajustado a la calidad de la señal y protección dinámica de ganancias. Las reglas y los parámetros específicos son confidenciales.</p></div>
         <div class="step reveal"><span class="mono">05</span><h4 data-i18n="p5.t">Operación</h4><p data-i18n="p5.d">Servicios systemd, un health guard, alertas por Telegram y un agente de Claude Code como monitor que revisa el sistema y notifica cualquier error o problema.</p></div>
       </div>
-      <p class="disclaimer mono reveal" data-i18n="trading.disc">* Backtests con velas de 15m de Bitget hasta el 2026-10-28, netos de comisiones, funding y deslizamiento. En S1 y S4, las velas de 1m se usan solo para fijar el precio exacto de entrada: en lugar de entrar al cierre de la vela de 15m en la que se toma la decisión, el backtest usa el precio real del minuto siguiente (unos 30 s después de ese cierre), como ocurre en vivo. Las salidas se simulan con velas de 15m. R = unidad de riesgo: lo que se pierde si salta el stop de una operación (0,5% de la cuenta), así que +10 R equivale a +5% de la cuenta. S1 y S4 arriesgan 1 R por operación, y algo más en las señales de mayor calidad; S2 arriesga 0,5 R. S1 y S4 clasifican cada señal según el tipo de setup del mercado y usan parámetros propios para cada tipo. Esos parámetros se eligieron solo con datos de 2018 a 2024 (entrenamiento); 2025 se usó únicamente para desactivar tipos de setup (validación) y 2026 no se usó en ningún paso, por lo que es un periodo fuera de muestra real. S2 se eligió solo con datos de 2020 a 2024, así que 2025 y 2026 son fuera de muestra real para ella.</p>
+      <p class="disclaimer mono reveal" data-i18n="trading.disc">* Backtests con velas de 15m de Bitget hasta el 2026-10-28, netos de comisiones, funding y deslizamiento. En S1 y S4, las velas de 1m se usan solo para fijar el precio exacto de entrada: en lugar de entrar al cierre de la vela de 15m en la que se toma la decisión, el backtest usa el precio real del minuto siguiente (unos 30 s después de ese cierre), como ocurre en vivo. Las salidas se simulan con velas de 15m. R = unidad de riesgo: lo que se pierde si salta el stop de una operación (0,5% de la cuenta), así que +10 R equivale a +5% de la cuenta. S1 y S4 arriesgan 1 R por operación, y algo más en las señales de mayor calidad. S1 y S4 clasifican cada señal según el tipo de setup del mercado y usan parámetros propios para cada tipo. Esos parámetros se eligieron solo con datos de 2018 a 2024 (entrenamiento); 2025 se usó únicamente para desactivar tipos de setup (validación) y 2026 no se usó en ningún paso, por lo que es un periodo fuera de muestra real.</p>
     </section>
 
     <!-- EXPERIENCE -->
@@ -336,11 +322,11 @@
   </div>
 
   <script type="module" src="js/scene.js?v=10"></script>
-  <script src="js/i18n.js?v=20"></script>
+  <script src="js/i18n.js?v=21"></script>
   <script src="js/main.js?v=13"></script>
 
   <!-- VR room (optional add-on): delete these two lines, js/vr.js and css/vr.css to remove it -->
   <link rel="stylesheet" href="css/vr.css?v=6">
-  <script type="module" src="js/vr.js?v=13"></script>
+  <script type="module" src="js/vr.js?v=14"></script>
 </body>
 </html>

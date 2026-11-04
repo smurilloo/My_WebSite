@@ -142,7 +142,7 @@ function frame(g) { // outer wall panel; its rim of light is drawn by the panel 
 const CARD = { w: 620, h: 450, gx: 30, gy: 22, x: 64, y: 290 };
 const DEPTH = 0.14;
 const cell = i => ({ x: CARD.x + (i % 3) * (CARD.w + CARD.gx), y: CARD.y + Math.floor(i / 3) * (CARD.h + CARD.gy), w: CARD.w, h: CARD.h });
-const REAL = { x: 1040, y: 300, w: 938, h: 910 };
+const REAL = { x: 1040, y: 300, w: 938, h: 910 }, REAL_ROW = 200;
 
 // One point of light per closed trade, built only from the per-strategy counts the page already shows
 function tradeLights() {
@@ -150,7 +150,7 @@ function tradeLights() {
   $$('.real .strat').slice(0, 4).forEach((s, i) => {
     if ($('.strat__id', s).dataset.i18n === 'rl.total') return;   // the total row is just the sum of the others
     const n = Math.min(30, parseInt(txt($('.strat__meta', s)), 10) || 0);
-    for (let j = 0; j < n; j++) out.push({ x: REAL.x + 160 + j * 26, y: 414 + i * 150 + 102 });
+    for (let j = 0; j < n; j++) out.push({ x: REAL.x + 160 + j * 26, y: 414 + i * REAL_ROW + 102 });
   });
   return out;
 }
@@ -212,7 +212,7 @@ const WALLS = [
     mono(g, txt(hs[0]), rx + 28, 318, rw - 56, { size: 22, color: C.up });
     text(g, txt(hs[1]), rx + 28, 354, rw - 56, { size: 21, min: 16, color: C.muted, maxH: 54 });
     $$('.real .strat').slice(0, 4).forEach((s, i) => {
-      const y = 414 + i * 150;
+      const y = 414 + i * REAL_ROW;
       g.fillStyle = C.line; g.fillRect(rx + 28, y - 4, rw - 56, 1.5);
       mono(g, txt($('.strat__id', s)), rx + 28, y + 4, 130, { size: 19, color: C.a2 });
       text(g, txt($('h4', s)), rx + 28, y + 30, 400, { size: 27, weight: 500, min: 21, maxH: 60, lh: 1.05 });
@@ -220,7 +220,7 @@ const WALLS = [
       counter(count, b, rx + 430, y + 8, 260, 62, { size: 50, color: num(b).startsWith('−') ? C.down : C.accent, spacing: -2, upper: false, align: 'right' });
       mono(g, txt($('.strat__unit', s)), rx + 700, y + 24, 210, { size: 15, color: C.muted, maxH: 40 });
       mono(g, txt($('.strat__meta', s)), rx + 28, y + 92, rw - 56, { size: 17, color: C.muted, upper: false });
-      zones.push({ x: rx + 10, y: y - 2, w: rw - 20, h: 146 });
+      zones.push({ x: rx + 10, y: y - 2, w: rw - 20, h: REAL_ROW - 4 });
     });
     const noteY = 1024;
     g.fillStyle = C.line; g.fillRect(rx + 28, noteY - 6, rw - 56, 1.5);
@@ -230,8 +230,8 @@ const WALLS = [
 
   function strategies(g, zones, count) {
     heading(g, '02', L().strategies, txt($('#trading > .backtest-date')), zones);
-    const cw = 620, ch = 900, gx = 30, x0 = 64, y0 = 290;
-    $$('#trading > .strats > .strat').slice(0, 3).forEach((s, i) => {
+    const cw = 945, ch = 900, gx = 30, x0 = 64, y0 = 290;
+    $$('#trading > .strats > .strat').slice(0, 2).forEach((s, i) => {
       const x = x0 + i * (cw + gx);
       glass(g, x, y0, cw, ch);
       mono(g, txt($('.strat__id', s)), x + 30, y0 + 26, 100, { size: 26, color: C.a2 });
