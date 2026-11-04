@@ -102,29 +102,6 @@ body.vr-open .mailpick { z-index: 208; }
 @keyframes vr-ping { from { transform: scale(0.15); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
 @keyframes vr-ping-dot { from { opacity: 0.9; } to { opacity: 0; } }
 
-/* ---------- Detail sheet (phones: real, full-size text) ---------- */
-.vr__sheet {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; max-height: 58%; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
-  padding: 24px var(--gutter, 16px) calc(24px + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid rgba(124, 247, 212, 0.45); border-radius: 24px 24px 0 0;
-  background: rgba(7, 9, 17, 0.9); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.6);
-  transform: translateY(105%); visibility: hidden; transition: transform 0.9s var(--ease), visibility 0.9s;
-}
-.vr__sheet.is-on { transform: none; visibility: visible; }
-.vr__sheet > * { opacity: 0; transform: translateY(18px); }
-.vr__sheet.is-on > * { opacity: 1; transform: none; transition: opacity 0.7s 0.2s, transform 0.9s var(--ease) 0.2s; }
-.vr__sheet.is-on > :nth-child(3) { transition-delay: 0.28s; }
-.vr__sheet.is-on > :nth-child(4) { transition-delay: 0.36s; }
-.vr__sheet.is-on > :nth-child(5) { transition-delay: 0.44s; }
-.vr__sclose { position: absolute; top: 14px; right: var(--gutter, 16px); width: 38px; height: 38px; border: 1px solid rgba(238, 240, 246, 0.25); border-radius: 50%; color: var(--fg, #eef0f6); }
-.vr__smeta { color: var(--accent, #7cf7d4); margin-bottom: 8px; padding-right: 48px; }
-.vr__stitle { font-size: 28px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1; padding-right: 40px; }
-.vr__sbody { color: var(--muted, #b6bbcd); font-size: 16px; line-height: 1.5; margin-top: 12px; white-space: pre-line; }
-.vr__sbody:empty { display: none; }
-.vr__stags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.vr__stags li { border: 1px solid rgba(238, 240, 246, 0.2); border-radius: 99px; padding: 4px 10px; font-size: 10px; color: var(--muted, #b6bbcd); }
-
 /* ---------- Loader (same language as the page preloader) ---------- */
 .vr__load { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; justify-content: flex-end; padding: var(--gutter, 16px); background: #05060a; transition: clip-path 1.2s var(--ease); clip-path: inset(0 0 0 0); }
 .vr__load.is-done { clip-path: inset(0 0 100% 0); pointer-events: none; }
@@ -141,6 +118,6 @@ body.vr-open .mailpick { z-index: 208; }
   .vr__hint { font-size: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .vr, .vr__load, .vr__sheet, .vr__top, .vr__nav { transition-duration: 0.01ms; transition-delay: 0s; }
+  .vr, .vr__load, .vr__top, .vr__nav { transition-duration: 0.01ms; transition-delay: 0s; }
   .vr::before, .vr-btn::before, .vr__title b span { animation: none; }
 }

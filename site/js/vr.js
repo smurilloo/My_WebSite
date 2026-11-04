@@ -118,10 +118,12 @@ function pill(g, str, x, y, o = {}) { // returns width
   g.fillStyle = color; g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillText(str.toUpperCase(), x + pad, y + h / 2 + 1);
   return w;
 }
-function heading(g, idx, title, intro) {
+function heading(g, idx, title, intro, zones) {
   mono(g, idx, 70, 62, 200, { size: 26, color: C.accent });
   text(g, title, 64, 96, 900, { size: 124, weight: 500, spacing: -4 });
-  if (intro) text(g, intro, 1010, 108, 970, { size: 29, min: 21, color: C.muted, maxH: 150 });
+  if (!intro) return;
+  text(g, intro, 1010, 108, 970, { size: 29, min: 21, color: C.muted, maxH: 150 });
+  zones.push({ x: 1000, y: 96, w: 990, h: 172 });
 }
 function frame(g) { // outer wall panel
   glass(g, 20, 20, TW - 40, TH - 40, 28, 'rgba(6,8,16,0.84)', 'rgba(124,247,212,0.32)');
@@ -129,7 +131,11 @@ function frame(g) { // outer wall panel
 }
 
 // ---------- Wall painters (read the live text of the page) ----------
-// `zones` collects what can be clicked: { x, y, w, h, title, meta, body, tags, href, noSheet }
+// Every piece of information lives on exactly one wall. `zones` collects what can be clicked: the camera moves
+// in to that rectangle, or follows `href` when it has one. Long texts use cards a phone can frame at a readable size.
+const CARD = { w: 640, h: 450, gx: 33, gy: 22, x: 70, y: 290 };
+const cell = i => ({ x: CARD.x + (i % 3) * (CARD.w + CARD.gx), y: CARD.y + Math.floor(i / 3) * (CARD.h + CARD.gy), w: CARD.w, h: CARD.h });
+
 const WALLS = [
   function hero(g, zones) {
     mono(g, txt($('.hero .eyebrow')), 90, 92, 900, { size: 27, color: C.muted });
@@ -144,64 +150,64 @@ const WALLS = [
       g.restore(); y += 140;
     });
     text(g, txt($('.hero__lead')), 90, 1000, 1150, { size: 36, min: 26, color: C.muted, maxH: 210 });
-    zones.push({ x: 70, y: 980, w: 1190, h: 230, title: txt($('.hero .eyebrow')), body: txt($('.hero__lead')) });
+    zones.push({ x: 70, y: 980, w: 1190, h: 230 });
   },
 
   function services(g, zones) {
-    heading(g, '01', txt($('#services .section__title')), txt($('#services .section__intro')));
-    const cw = 640, ch = 450, gx = 33, x0 = 70, y0 = 290;
+    heading(g, '01', txt($('#services .section__title')), txt($('#services .section__intro')), zones);
     $$('#services .card').slice(0, 6).forEach((c, i) => {
-      const x = x0 + (i % 3) * (cw + gx), y = y0 + Math.floor(i / 3) * (ch + 22);
+      const { x, y, w: cw, h: ch } = cell(i);
       glass(g, x, y, cw, ch);
       mono(g, txt($('.card__num', c)), x + 30, y + 24, 200, { size: 22, color: C.accent });
       const th = text(g, txt($('h3', c)), x + 30, y + 62, cw - 60, { size: 40, min: 28, weight: 500, lh: 1.1, maxH: 100, spacing: -1 });
       text(g, txt($('p', c)), x + 30, y + 74 + Math.max(th, 48) + 8, cw - 60, { size: 26, min: 19, color: C.muted, maxH: ch - 74 - Math.max(th, 48) - 8 - 74 });
       let tx = x + 30;
-      const tags = $$('.tags li', c).map(txt);
-      tags.forEach(t => { tx += pill(g, t, tx, y + ch - 62, { size: 17 }) + 8; });
-      zones.push({ x, y, w: cw, h: ch, meta: txt($('.card__num', c)), title: txt($('h3', c)), body: txt($('p', c)), tags });
+      $$('.tags li', c).forEach(t => { tx += pill(g, txt(t), tx, y + ch - 62, { size: 17 }) + 8; });
+      zones.push({ x, y, w: cw, h: ch });
     });
   },
 
   function trading(g, zones) {
-    heading(g, '02', txt($('#trading .section__title')), txt($('#trading .section__intro')));
-    // the live chart itself is composited by the shader (see makeChart)
+    heading(g, '02', txt($('#trading .section__title')), txt($('#trading .section__intro')), zones);
+    // the live chart itself is composited by the shader (see the live layers in buildRoom)
     const cx = 70, cy = 300, cw = 930, chh = 410;
     glass(g, cx, cy, cw, chh);
-    const chartTitle = txt($('.chart__head span'));
-    mono(g, chartTitle, cx + 24, cy + 18, 640, { size: 19, color: C.muted });
+    mono(g, txt($('.chart__head span')), cx + 24, cy + 18, 640, { size: 19, color: C.muted });
     mono(g, 'LIVE', cx + cw - 24 - 120, cy + 18, 120, { size: 19, color: C.up, align: 'right' });
-    zones.push({ x: cx, y: cy, w: cw, h: chh, title: chartTitle, noSheet: true });
+    zones.push({ x: cx, y: cy, w: cw, h: chh });
     const sw = 455, sh = 242;
     $$('#trading .stat').slice(0, 4).forEach((s, i) => {
       const x = cx + (i % 2) * (sw + 20), y = cy + chh + 18 + Math.floor(i / 2) * (sh + 16);
       glass(g, x, y, sw, sh);
       mono(g, num($('b', s)), x + 24, y + 24, sw - 48, { size: 58, color: C.accent, spacing: -2, upper: false });
       text(g, txt($('span', s)), x + 24, y + 104, sw - 48, { size: 22, min: 16, color: C.muted, maxH: sh - 116 });
-      zones.push({ x, y, w: sw, h: sh, title: num($('b', s)), body: txt($('span', s)) });
+      zones.push({ x, y, w: sw, h: sh });
     });
     const rx = 1040, rw = 938;
     const rh = $('.real__head');
     glass(g, rx, 300, rw, 910, 18, 'rgba(8,10,20,0.78)', 'rgba(62,240,168,0.35)');
     const hs = rh ? $$(':scope > span', rh) : [];
-    mono(g, txt(hs[0]), rx + 28, 322, rw - 56, { size: 22, color: C.up });
-    text(g, txt(hs[1]), rx + 28, 362, rw - 56, { size: 21, min: 16, color: C.muted, maxH: 62 });
-    const note = txt($('.real > .backtest-date'));
+    mono(g, txt(hs[0]), rx + 28, 318, rw - 56, { size: 22, color: C.up });
+    text(g, txt(hs[1]), rx + 28, 354, rw - 56, { size: 21, min: 16, color: C.muted, maxH: 54 });
     $$('.real .strat').slice(0, 4).forEach((s, i) => {
-      const y = 450 + i * 188, val = num($('b', s)), meta = txt($('.strat__meta', s));
-      g.fillStyle = C.line; g.fillRect(rx + 28, y - 8, rw - 56, 1.5);
-      mono(g, txt($('.strat__id', s)), rx + 28, y + 14, 130, { size: 22, color: C.a2 });
-      text(g, txt($('h4', s)), rx + 28, y + 50, 380, { size: 29, weight: 500, min: 21, maxH: 70, lh: 1.1 });
-      mono(g, val, rx + 420, y + 16, 270, { size: 56, color: val.startsWith('−') ? C.down : C.accent, spacing: -2, upper: false, align: 'right' });
-      mono(g, txt($('.strat__unit', s)), rx + 700, y + 38, 210, { size: 15, color: C.muted, maxH: 40 });
-      mono(g, meta, rx + 28, y + 116, rw - 56, { size: 18, color: C.muted, upper: false });
-      zones.push({ x: rx + 10, y: y - 6, w: rw - 20, h: 180, meta: txt($('.strat__id', s)), title: `${txt($('h4', s))}  ${val}`, body: `${txt($('.strat__unit', s))} · ${meta}\n\n${note}` });
+      const y = 416 + i * 152, val = num($('b', s));
+      g.fillStyle = C.line; g.fillRect(rx + 28, y - 6, rw - 56, 1.5);
+      mono(g, txt($('.strat__id', s)), rx + 28, y + 6, 130, { size: 20, color: C.a2 });
+      text(g, txt($('h4', s)), rx + 28, y + 36, 400, { size: 28, weight: 500, min: 21, maxH: 64, lh: 1.08 });
+      mono(g, val, rx + 430, y + 10, 260, { size: 56, color: val.startsWith('−') ? C.down : C.accent, spacing: -2, upper: false, align: 'right' });
+      mono(g, txt($('.strat__unit', s)), rx + 700, y + 30, 210, { size: 15, color: C.muted, maxH: 40 });
+      mono(g, txt($('.strat__meta', s)), rx + 28, y + 106, rw - 56, { size: 18, color: C.muted, upper: false });
+      zones.push({ x: rx + 10, y: y - 4, w: rw - 20, h: 148 });
     });
+    const noteY = 1024;
+    g.fillStyle = C.line; g.fillRect(rx + 28, noteY - 6, rw - 56, 1.5);
+    text(g, txt($('.real > .backtest-date')), rx + 28, noteY + 4, rw - 56, { size: 20, min: 14, color: C.muted, maxH: 172, lh: 1.25 });
+    zones.push({ x: rx + 10, y: noteY - 4, w: rw - 20, h: 186 });
   },
 
   function strategies(g, zones) {
-    heading(g, '02', L().strategies, txt($('#trading > .backtest-date')));
-    const cw = 640, ch = 830, gx = 33, x0 = 70, y0 = 290;
+    heading(g, '02', L().strategies, txt($('#trading > .backtest-date')), zones);
+    const cw = 640, ch = 900, gx = 33, x0 = 70, y0 = 290;
     $$('#trading > .strats > .strat').slice(0, 3).forEach((s, i) => {
       const x = x0 + i * (cw + gx);
       glass(g, x, y0, cw, ch);
@@ -209,85 +215,81 @@ const WALLS = [
       text(g, txt($('h4', s)), x + 30, y0 + 66, cw - 60, { size: 38, weight: 500, min: 28, maxH: 100, lh: 1.1, spacing: -1 });
       mono(g, num($('b', s)), x + 30, y0 + 170, 300, { size: 110, color: C.accent, spacing: -4, upper: false });
       mono(g, txt($('.strat__unit', s)), x + 30, y0 + 300, cw - 60, { size: 19, color: C.muted });
-      let y = y0 + 360; const body = [];
+      let y = y0 + 360;
       $$('.strat__meta', s).forEach(m => {
         const lab = $('.strat__lab', m), lt = txt(lab), rest = txt(m).replace(lt, '').trim();
         g.fillStyle = C.line; g.fillRect(x + 30, y - 10, cw - 60, 1.5);
         mono(g, lt, x + 30, y + 4, cw - 60, { size: 19, color: C.fg });
-        text(g, rest, x + 30, y + 40, cw - 60, { size: 24, min: 18, color: C.muted, maxH: 100 });
-        body.push(`${lt}\n${rest}`);
-        y += 150;
+        text(g, rest, x + 30, y + 40, cw - 60, { size: 26, min: 18, color: C.muted, maxH: 120 });
+        y += 176;
       });
-      zones.push({ x, y: y0, w: cw, h: ch, meta: txt($('.strat__id', s)), title: `${txt($('h4', s))}  ${num($('b', s))}`, body: `${txt($('.strat__unit', s))}\n\n${body.join('\n\n')}` });
+      zones.push({ x, y: y0, w: cw, h: ch });
     });
-    const disc = txt($('#trading > .disclaimer'));
-    text(g, disc, 70, 1138, TW - 140, { size: 20, min: 14, color: C.muted, maxH: 86, lh: 1.25 });
-    zones.push({ x: 60, y: 1128, w: TW - 120, h: 100, title: L().strategies, body: disc });
   },
 
   function pipeline(g, zones) {
-    heading(g, '02', L().pipeline, '');
-    const cw = 372, gx = 28, x0 = 70, y0 = 290, ch = 790;
+    heading(g, '02', L().pipeline, '', zones);
     $$('#trading .pipeline .step').slice(0, 5).forEach((s, i) => {
-      const x = x0 + i * (cw + gx);
-      glass(g, x, y0, cw, ch);
-      g.fillStyle = C.accent; g.fillRect(x + 24, y0 + 1, cw - 48, 3);
-      mono(g, txt($('span', s)), x + 26, y0 + 26, 100, { size: 24, color: C.accent });
-      const th = text(g, txt($('h4', s)), x + 26, y0 + 64, cw - 52, { size: 38, min: 28, weight: 500, lh: 1.1, maxH: 90, spacing: -1 });
-      text(g, txt($('p', s)), x + 26, y0 + 64 + Math.max(th, 44) + 18, cw - 52, { size: 24, min: 17, color: C.muted, maxH: ch - 64 - Math.max(th, 44) - 40 });
-      zones.push({ x, y: y0, w: cw, h: ch, meta: txt($('span', s)), title: txt($('h4', s)), body: txt($('p', s)) });
+      const { x, y, w: cw, h: ch } = cell(i);
+      glass(g, x, y, cw, ch);
+      g.fillStyle = C.accent; g.fillRect(x + 24, y + 1, cw - 48, 3);
+      mono(g, txt($('span', s)), x + 30, y + 22, 100, { size: 22, color: C.accent });
+      text(g, txt($('h4', s)), x + 90, y + 14, cw - 120, { size: 36, min: 28, weight: 500, lh: 1.1, maxH: 44, spacing: -1 });
+      text(g, txt($('p', s)), x + 30, y + 70, cw - 60, { size: 26, min: 15, color: C.muted, maxH: ch - 86, lh: 1.24 });
+      zones.push({ x, y, w: cw, h: ch });
     });
-    const disc = txt($('#trading > .disclaimer'));
-    text(g, disc, 70, 1110, TW - 140, { size: 20, min: 14, color: C.muted, maxH: 100, lh: 1.25 });
-    zones.push({ x: 60, y: 1100, w: TW - 120, h: 120, title: L().pipeline, body: disc });
+    const d = cell(5);
+    glass(g, d.x, d.y, d.w, d.h);
+    text(g, txt($('#trading > .disclaimer')), d.x + 30, d.y + 22, d.w - 60, { size: 24, min: 13, color: C.muted, maxH: d.h - 40, lh: 1.24 });
+    zones.push({ x: d.x, y: d.y, w: d.w, h: d.h });
   },
 
   function experience(g, zones) {
-    heading(g, '03', txt($('#experience .section__title')), '');
-    const jobs = $$('#experience .job').filter(j => !$('h3[data-i18n^="edu."]', j));
-    const cw = TW - 140, ch = 176, x0 = 70, y0 = 280;
-    jobs.slice(0, 5).forEach((j, i) => {
-      const x = x0, y = y0 + i * (ch + 12);
+    heading(g, '03', txt($('#experience .section__title')), '', zones);
+    const all = $$('#experience .job'), isEdu = j => !!$('h3[data-i18n^="edu."]', j);
+    all.filter(j => !isEdu(j)).slice(0, 5).forEach((j, i) => {
+      const { x, y, w: cw, h: ch } = cell(i);
       glass(g, x, y, cw, ch);
-      mono(g, txt($('.job__date', j)), x + 28, y + 24, 250, { size: 22, color: C.accent });
-      text(g, txt($('h3', j)), x + 290, y + 12, 800, { size: 46, min: 32, weight: 500, lh: 1.05, maxH: 56, spacing: -1 });
-      mono(g, txt($('.job__role', j)), x + 1000, y + 26, cw - 1028, { size: 20, color: C.fg, maxH: 30, upper: false, align: 'right' });
-      text(g, txt($('p:last-child', j)), x + 28, y + 76, cw - 56, { size: 27, min: 19, color: C.muted, maxH: ch - 86, lh: 1.22 });
-      zones.push({ x, y, w: cw, h: ch, meta: `${txt($('.job__date', j))} · ${txt($('.job__role', j))}`, title: txt($('h3', j)), body: txt($('p:last-child', j)) });
+      mono(g, txt($('.job__date', j)), x + 30, y + 22, 300, { size: 21, color: C.accent });
+      text(g, txt($('h3', j)), x + 30, y + 52, cw - 60, { size: 38, min: 28, weight: 500, lh: 1.05, maxH: 46, spacing: -1 });
+      mono(g, txt($('.job__role', j)), x + 30, y + 102, cw - 60, { size: 18, color: C.fg, maxH: 28, upper: false });
+      text(g, txt($('p:last-child', j)), x + 30, y + 138, cw - 60, { size: 25, min: 15, color: C.muted, maxH: ch - 152, lh: 1.24 });
+      zones.push({ x, y, w: cw, h: ch });
     });
+    // education shares the sixth card, as on the page's timeline
+    const { x, y, w: cw, h: ch } = cell(5);
+    glass(g, x, y, cw, ch);
+    mono(g, L().education, x + 30, y + 22, cw - 60, { size: 21, color: C.a2 });
+    all.filter(isEdu).slice(0, 2).forEach((j, i) => {
+      const ey = y + 60 + i * 192;
+      mono(g, txt($('.job__date', j)), x + 30, ey, 300, { size: 18, color: C.accent });
+      text(g, txt($('h3', j)), x + 30, ey + 26, cw - 60, { size: 28, min: 22, weight: 500, maxH: 36, lh: 1.1 });
+      mono(g, txt($('.job__role', j)), x + 30, ey + 64, cw - 60, { size: 16, upper: false, maxH: 26 });
+      text(g, txt($('p:last-child', j)), x + 30, ey + 92, cw - 60, { size: 21, min: 16, color: C.muted, maxH: 88, lh: 1.22 });
+    });
+    zones.push({ x, y, w: cw, h: ch });
   },
 
   function stack(g, zones) {
-    heading(g, '04', txt($('#stack .section__title')), '');
-    let y = 270;
+    heading(g, '04', txt($('#stack .section__title')), '', zones);
+    let y = 300;
     $$('#stack .marquee__row').forEach((r, i) => {
       const t = txt($('span', r)).replace(/[ ·]+$/, '');
-      const h = text(g, t, 70, y, TW - 140, { size: 56, min: 40, weight: 500, lh: 1.15, maxH: 140, spacing: -1, color: i ? C.a2 : C.fg });
-      zones.push({ x: 60, y: y - 6, w: TW - 120, h: h + 12, title: txt($('#stack .section__title')), body: t });
-      y += h + 22;
+      const h = text(g, t, 70, y, TW - 140, { size: 84, min: 56, weight: 500, lh: 1.12, maxH: 300, spacing: -2, color: i ? C.a2 : C.fg });
+      zones.push({ x: 60, y: y - 6, w: TW - 120, h: h + 12 });
+      y += h + 56;
     });
-    let bx = 70, by = y + 14;
+    let bx = 70, by = y + 24;
     $$('#stack .badge').forEach(b => {
       const tag = txt($('span', b)), name = txt(b).replace(tag, '').trim();
-      g.font = `400 28px ${SANS}`; if ('letterSpacing' in g) g.letterSpacing = '0px';
-      const w = g.measureText(name).width + 130;
-      if (bx + w > TW - 70) { bx = 70; by += 76; }
-      glass(g, bx, by, w, 60, 30);
-      mono(g, tag, bx + 22, by + 20, 80, { size: 15, color: C.accent });
-      text(g, name, bx + 100, by + 14, w - 110, { size: 28, color: C.fg });
-      zones.push({ x: bx, y: by, w, h: 60, meta: tag, title: name });
-      bx += w + 14;
-    });
-    const ey = by + 110;
-    mono(g, L().education, 70, ey, 600, { size: 24, color: C.accent });
-    $$('#experience .job').filter(j => $('h3[data-i18n^="edu."]', j)).slice(0, 2).forEach((j, i) => {
-      const x = 70 + i * 968, cw = 940, h = Math.min(300, TH - 56 - (ey + 44));
-      glass(g, x, ey + 44, cw, h);
-      mono(g, txt($('.job__date', j)), x + 28, ey + 66, 300, { size: 21, color: C.accent });
-      text(g, txt($('h3', j)), x + 28, ey + 96, cw - 56, { size: 36, min: 26, weight: 500, lh: 1.1, maxH: 50, spacing: -1 });
-      mono(g, txt($('.job__role', j)), x + 28, ey + 150, cw - 56, { size: 19, upper: false, maxH: 28 });
-      text(g, txt($('p:last-child', j)), x + 28, ey + 192, cw - 56, { size: 23, min: 16, color: C.muted, maxH: h - 170 });
-      zones.push({ x, y: ey + 44, w: cw, h, meta: `${txt($('.job__date', j))} · ${txt($('.job__role', j))}`, title: txt($('h3', j)), body: txt($('p:last-child', j)) });
+      g.font = `400 34px ${SANS}`; if ('letterSpacing' in g) g.letterSpacing = '0px';
+      const w = g.measureText(name).width + 142;
+      if (bx + w > TW - 70) { bx = 70; by += 92; }
+      glass(g, bx, by, w, 76, 38);
+      mono(g, tag, bx + 26, by + 28, 84, { size: 17, color: C.accent });
+      text(g, name, bx + 112, by + 18, w - 124, { size: 34, color: C.fg });
+      zones.push({ x: bx, y: by, w, h: 76 });
+      bx += w + 16;
     });
   },
 
@@ -302,7 +304,7 @@ const WALLS = [
       if (outline) { g.lineWidth = 3; g.strokeStyle = C.fg; g.strokeText(t, 84, y); } else { g.fillStyle = C.fg; g.fillText(t, 84, y); }
       g.restore(); y += 215;
     });
-    zones.push({ x: 60, y: 200, w: 1500, h: 450, href: 'mailto:smurilloo@unal.edu.co', title: 'Email' });
+    zones.push({ x: 60, y: 200, w: 1500, h: 450, href: 'mailto:smurilloo@unal.edu.co' });
     let x = 90, py = 800;
     $$('.contact__links a').forEach(a => {
       g.font = `400 34px ${MONO}`; if ('letterSpacing' in g) g.letterSpacing = '1px';
@@ -310,7 +312,7 @@ const WALLS = [
       if (x + w > TW - 70) { x = 90; py += h + 20; }
       glass(g, x, py, w, h, 52, 'rgba(8,10,20,0.78)', 'rgba(124,247,212,0.55)');
       g.font = `400 34px ${MONO}`; g.fillStyle = C.fg; g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillText(label, x + 42, py + h / 2 + 2);
-      zones.push({ x, y: py, w, h, href: a.getAttribute('href'), title: label });
+      zones.push({ x, y: py, w, h, href: a.getAttribute('href') });
       x += w + 22;
     });
     mono(g, `© ${new Date().getFullYear()} Samuel Murillo Ospina`, 90, 1180, 900, { size: 20, color: C.muted });
@@ -736,13 +738,6 @@ async function openVR(ev) {
     </div>
     <p class="vr__hint mono" data-vr="hint">${coarse ? t.hintTouch : t.hintDesk}</p>
     <nav class="vr__nav mono"><i class="vr__ind" data-vr="ind"></i>${t.walls.map((w, i) => `<button type="button" data-wall="${i}" aria-label="${w}">${String(i + 1).padStart(2, '0')}<span> ${w}</span></button>`).join('')}</nav>
-    <aside class="vr__sheet" data-vr="sheet" aria-hidden="true">
-      <button class="vr__sclose" type="button" data-vr="sclose" aria-label="${t.close}">✕</button>
-      <p class="vr__smeta mono" data-vr="smeta"></p>
-      <h3 class="vr__stitle" data-vr="stitle"></h3>
-      <p class="vr__sbody" data-vr="sbody"></p>
-      <ul class="vr__stags mono" data-vr="stags"></ul>
-    </aside>
     <div class="vr__load" data-vr="load">
       <div class="vr__count" data-vr="count">000</div>
       <div class="vr__bar"><span data-vr="bar"></span></div>
@@ -1013,7 +1008,6 @@ async function buildRoom() {
     panX: 0, panY: 0, tPanX: 0, tPanY: 0, pull: 0, tPull: 0, vel: 0,
     px: 0, py: 0, mx: 0, my: 0, lastInput: performance.now(), spin: 0,
   };
-  const narrow = () => innerWidth < 700;
   const size = () => ({ w: ui ? ui.clientWidth : innerWidth, h: ui ? ui.clientHeight : innerHeight });
   // How far back the camera must be for a rectangle (metres) to fit the screen at the framed fov
   function frameDist(w, h, mw, mh) {
@@ -1031,12 +1025,11 @@ async function buildRoom() {
       const f = frameDist(PW, PH, 0.94, 0.74);
       s.tDist = f.dist; s.tFov = f.fov; s.tPitch = 0; s.tPanX = s.tPanY = 0;
     } else if (s.mode === 'zone' && s.zone) {
-      const z = s.zone, sheet = q('sheet').classList.contains('is-on');
-      const f = frameDist(z.w / TW * PW, z.h / TH * PH, 0.92, sheet ? 0.42 : 0.72);
+      const z = s.zone;
+      const f = frameDist(z.w / TW * PW, z.h / TH * PH, 0.96, 0.72);
       s.tDist = f.dist; s.tFov = f.fov; s.tPitch = 0;
       s.tPanX = ((z.x + z.w / 2) / TW - 0.5) * PW;
       s.tPanY = (0.5 - (z.y + z.h / 2) / TH) * PH;
-      if (sheet) s.tPanY -= Math.tan(rad(f.fov) / 2) * f.dist * 0.48; // keep the card above the sheet
     }
     q('back').classList.toggle('is-off', s.mode === 'over');
   }
@@ -1048,7 +1041,6 @@ async function buildRoom() {
   function setMode(mode, wall, zone) {
     if (wall != null) toWall(wall);
     s.mode = mode; s.zone = zone || null; s.zoneWall = zone ? wall : -1; s.tPull = 0;
-    setSheet(mode === 'zone' && zone && !zone.noSheet && narrow() ? zone : null);
     applyMode();
     hideHint();
   }
@@ -1058,20 +1050,7 @@ async function buildRoom() {
   }
   const wrap = i => ((i % N) + N) % N;
 
-  // --- detail sheet (narrow screens only)
-  function setSheet(z) {
-    const sh = q('sheet');
-    sh.classList.toggle('is-on', !!z); sh.setAttribute('aria-hidden', String(!z));
-    if (!z) return;
-    q('smeta').textContent = z.meta || '';
-    q('stitle').textContent = z.title || '';
-    q('sbody').textContent = z.body || '';
-    const tags = q('stags'); tags.textContent = '';
-    (z.tags || []).forEach(t => { const li = el('li'); li.textContent = t; tags.appendChild(li); });
-    sh.scrollTop = 0;
-  }
   const on = (t, ev, fn, o) => { t.addEventListener(ev, fn, o); disposables.push({ dispose: () => t.removeEventListener(ev, fn, o) }); };
-  on(q('sclose'), 'click', stepOut);
   on(q('back'), 'click', stepOut);
 
   // --- hint
