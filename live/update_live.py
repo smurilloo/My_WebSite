@@ -70,15 +70,11 @@ def render(trades, cfg):
     last = datetime.fromtimestamp(max(t for _, t, _ in trades), timezone.utc).strftime("%Y-%m-%d") if trades else "—"
 
     total = sum(pct for _, _, pct in trades)
-    # One entry per closed trade, drawn as a point of light in the VR room: [strategy, close time, net % of the account]
-    trade_list = json.dumps(
-        [[cfg["strategies"].get(s, s), int(t), round(pct, 2)] for s, t, pct in trades], separators=(",", ":")
-    )
     html = [
         '        <p class="real__head mono reveal"><span class="live"><i></i><span data-i18n="rl.head">'
         'Operativa real en Bitget · capital real</span></span><span><span data-i18n="rl.period">'
         f'Desde el {cfg["since"]} · solo trades cerrados · último cierre:</span> {last}</span></p>\n',
-        f"        <div class=\"strats\" data-trades='{trade_list}'>\n",
+        '        <div class="strats">\n',
         card("Total", "rl.all", "Cuenta completa", total,
              f"{n_trades(len(trades))} · {' + '.join(order) or '—'}", label_key="rl.total"),
     ]

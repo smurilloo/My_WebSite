@@ -43,10 +43,11 @@ render.yaml                                  # Blueprint de Render
 
 El botón **VR** (abajo a la derecha) abre una sala virtual leída del propio HTML (sigue el idioma y los datos en vivo). Los paneles
 son bloques 3D que salen de las paredes, el orbe de la página cuelga del techo y el suelo es un espejo en tiempo real. Al llegar a
-Trading las cifras cuentan, las velas de Bitget crecen como barras 3D y cada trade real cerrado se enciende como un punto de luz
-(`live/update_live.py` publica la lista en `data-trades`). La trayectoria es un camino de luz en el suelo con un hito por empleo.
+Trading las cifras cuentan, las velas de Bitget crecen en 3D con el mismo aspecto de la web y se enciende un punto de luz por cada
+trade cerrado, a partir de los conteos por estrategia que ya muestra la página. La trayectoria es un camino de luz con una esfera
+numerada y un panel por empleo.
 
 Mouse: arrastrar para girar, rueda para avanzar, clic para entrar, flechas o clic en el suelo para caminar. Táctil: deslizar en
-horizontal para girar y en vertical para caminar, pellizcar para avanzar, tocar para entrar o caminar hasta ese punto del suelo.
+horizontal para girar y en vertical para caminar, pellizcar para avanzar, tocar para entrar o caminar hasta ese punto del suelo. Doble clic o doble toque retrocede un nivel, igual que el botón Volver.
 
 Para quitarla: borrar `site/js/vr.js`, `site/css/vr.css` y las dos líneas marcadas `VR room` al final de `site/index.html`.

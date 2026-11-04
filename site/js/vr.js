@@ -18,8 +18,8 @@ const UI = {
   es: {
     btn: 'Ver el sitio en VR', close: 'Salir', back: 'Volver',
     loading: 'Construyendo la sala', fail: 'No se pudo iniciar WebGL en este dispositivo.',
-    hintDesk: 'Arrastra para girar · rueda para acercar · clic en una pared o tarjeta para entrar',
-    hintTouch: 'Desliza para girar · pellizca para acercar · toca una pared o tarjeta para entrar',
+    hintDesk: 'Arrastra para girar · clic en una pared o tarjeta para entrar · doble clic para volver',
+    hintTouch: 'Desliza para girar · toca una pared o tarjeta para entrar · doble toque para volver',
     walls: ['Inicio', 'Servicios', 'Trading', 'Estrategias', 'Pipeline', 'Trayectoria', 'Formación', 'Stack', 'Contacto'],
     walkDesk: 'También puedes desplazarte con las flechas del teclado', walkTouch: 'Con el panel táctil te puedes desplazar libremente',
     pathHint: 'Sigue el camino de luz en el suelo: cada hito es una etapa de mi carrera.',
@@ -29,8 +29,8 @@ const UI = {
   en: {
     btn: 'View the site in VR', close: 'Exit', back: 'Back',
     loading: 'Building the room', fail: 'WebGL could not start on this device.',
-    hintDesk: 'Drag to turn · wheel to zoom · click a wall or card to step in',
-    hintTouch: 'Swipe to turn · pinch to zoom · tap a wall or card to step in',
+    hintDesk: 'Drag to turn · click a wall or card to step in · double-click to go back',
+    hintTouch: 'Swipe to turn · tap a wall or card to step in · double-tap to go back',
     walls: ['Home', 'Services', 'Trading', 'Strategies', 'Pipeline', 'Experience', 'Education', 'Stack', 'Contact'],
     walkDesk: 'You can also move around with the arrow keys', walkTouch: 'Use the touch panel to move around freely',
     pathHint: 'Follow the path of light on the floor: each milestone is a stage of my career.',
@@ -64,7 +64,7 @@ const STATES = [
   { s: 1.5, amp: 0.3, freq: 0.7, spikes: 0.0, a: '#ffffff', b: '#7cf7d4', flow: 0 },
 ];
 const WALL_STATE = [0, 1, 2, 2, 2, 3, 3, 4, 5]; // wall -> page section state
-const WALL_PATH = 5, WALL_FLOW = 4, WALL_TRADING = 2;
+const WALL_PATH = 5, WALL_TRADING = 2;
 
 // ---------- Canvas drawing helpers ----------
 const SANS = '"Space Grotesk", system-ui, sans-serif', MONO = '"JetBrains Mono", ui-monospace, monospace';
@@ -144,20 +144,16 @@ const CARD = { w: 640, h: 450, gx: 33, gy: 22, x: 70, y: 290 };
 const DEPTH = 0.14;
 const cell = i => ({ x: CARD.x + (i % 3) * (CARD.w + CARD.gx), y: CARD.y + Math.floor(i / 3) * (CARD.h + CARD.gy), w: CARD.w, h: CARD.h });
 const REAL = { x: 1040, y: 300, w: 938, h: 910 };
-const TRACK = { x: 1068, y: 934, w: 882, h: 96 };   // where the real trades float on the Trading wall
 
-// Closed trades published by live/update_live.py: [strategy, close time (s), net % of the account]
-function realTrades() {
-  try { return JSON.parse($('.real .strats').dataset.trades || '[]'); } catch (e) { return []; }
-}
-function tradePoints(trades) {
-  if (!trades.length) return [];
-  const t0 = trades[0][1], t1 = trades[trades.length - 1][1], big = Math.max(...trades.map(t => Math.abs(t[2])), 0.01);
-  return trades.map((t, i) => ({
-    sid: t[0], pct: t[2],
-    x: TRACK.x + 24 + (t1 > t0 ? (t[1] - t0) / (t1 - t0) : i / Math.max(1, trades.length - 1)) * (TRACK.w - 48),
-    y: TRACK.y + TRACK.h / 2 - t[2] / big * (TRACK.h / 2 - 12),
-  }));
+// One point of light per closed trade, built only from the per-strategy counts the page already shows
+function tradeLights() {
+  const out = [];
+  $$('.real .strat').slice(0, 4).forEach((s, i) => {
+    if ($('.strat__id', s).dataset.i18n === 'rl.total') return;   // the total row is just the sum of the others
+    const n = Math.min(30, parseInt(txt($('.strat__meta', s)), 10) || 0);
+    for (let j = 0; j < n; j++) out.push({ x: REAL.x + 160 + j * 26, y: 414 + i * 150 + 102 });
+  });
+  return out;
 }
 function counter(count, b, x, y, w, h, o) {
   count.push({ b, x, y, w, h, o });
@@ -218,7 +214,7 @@ const WALLS = [
     mono(g, txt(hs[0]), rx + 28, 318, rw - 56, { size: 22, color: C.up });
     text(g, txt(hs[1]), rx + 28, 354, rw - 56, { size: 21, min: 16, color: C.muted, maxH: 54 });
     $$('.real .strat').slice(0, 4).forEach((s, i) => {
-      const y = 414 + i * 128;
+      const y = 414 + i * 150;
       g.fillStyle = C.line; g.fillRect(rx + 28, y - 4, rw - 56, 1.5);
       mono(g, txt($('.strat__id', s)), rx + 28, y + 4, 130, { size: 19, color: C.a2 });
       text(g, txt($('h4', s)), rx + 28, y + 30, 400, { size: 27, weight: 500, min: 21, maxH: 60, lh: 1.05 });
@@ -226,21 +222,12 @@ const WALLS = [
       counter(count, b, rx + 430, y + 8, 260, 62, { size: 50, color: num(b).startsWith('−') ? C.down : C.accent, spacing: -2, upper: false, align: 'right' });
       mono(g, txt($('.strat__unit', s)), rx + 700, y + 24, 210, { size: 15, color: C.muted, maxH: 40 });
       mono(g, txt($('.strat__meta', s)), rx + 28, y + 92, rw - 56, { size: 17, color: C.muted, upper: false });
-      zones.push({ x: rx + 10, y: y - 2, w: rw - 20, h: 124 });
+      zones.push({ x: rx + 10, y: y - 2, w: rw - 20, h: 146 });
     });
-    // baseline for the trades, which float in front of it as points of light
-    const pts = tradePoints(realTrades());
-    g.fillStyle = C.line; g.fillRect(rx + 28, TRACK.y - 8, rw - 56, 1.5);
-    g.save(); g.setLineDash([4, 6]); g.strokeStyle = 'rgba(238,240,246,0.28)'; g.lineWidth = 1.5;
-    g.beginPath(); g.moveTo(TRACK.x, TRACK.y + TRACK.h / 2); g.lineTo(TRACK.x + TRACK.w, TRACK.y + TRACK.h / 2); g.stroke(); g.restore();
-    if (pts.length <= 16) pts.forEach(p => {
-      mono(g, `${p.pct >= 0 ? '+' : '−'}${Math.abs(p.pct).toFixed(1)}`, p.x - 40, p.pct >= 0 ? p.y + 12 : p.y - 28, 80, { size: 14, color: C.muted, upper: false, align: 'center', spacing: 0 });
-    });
-    zones.push({ x: rx + 10, y: TRACK.y - 6, w: rw - 20, h: TRACK.h + 12 });
-    const noteY = 1046;
+    const noteY = 1024;
     g.fillStyle = C.line; g.fillRect(rx + 28, noteY - 6, rw - 56, 1.5);
-    text(g, txt($('.real > .backtest-date')), rx + 28, noteY + 4, rw - 56, { size: 20, min: 14, color: C.muted, maxH: 150, lh: 1.25 });
-    zones.push({ x: rx + 10, y: noteY - 4, w: rw - 20, h: 160 });
+    text(g, txt($('.real > .backtest-date')), rx + 28, noteY + 4, rw - 56, { size: 20, min: 14, color: C.muted, maxH: 170, lh: 1.25 });
+    zones.push({ x: rx + 10, y: noteY - 4, w: rw - 20, h: 182 });
   },
 
   function strategies(g, zones, count) {
@@ -274,7 +261,7 @@ const WALLS = [
       mono(g, txt($('span', s)), x + 30, y + 22, 100, { size: 22, color: C.accent });
       text(g, txt($('h4', s)), x + 90, y + 14, cw - 120, { size: 36, min: 28, weight: 500, lh: 1.1, maxH: 44, spacing: -1 });
       text(g, txt($('p', s)), x + 30, y + 70, cw - 60, { size: 26, min: 15, color: C.muted, maxH: ch - 86, lh: 1.24 });
-      zones.push({ x, y, w: cw, h: ch, d: DEPTH, step: i });
+      zones.push({ x, y, w: cw, h: ch, d: DEPTH });
     });
     const d = cell(5);
     glass(g, d.x, d.y, d.w, d.h);
@@ -286,16 +273,16 @@ const WALLS = [
   function experience(g) {
     mono(g, '03', 90, 90, 200, { size: 26, color: C.accent });
     const title = txt($('#experience .section__title'));
-    g.font = `500 200px ${SANS}`; if ('letterSpacing' in g) g.letterSpacing = '-10px';
+    g.font = `500 170px ${SANS}`; if ('letterSpacing' in g) g.letterSpacing = '-8px';
     g.textBaseline = 'top'; g.textAlign = 'left'; g.fillStyle = C.fg;
-    g.save(); g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 8; g.fillText(title, 84, 160); g.restore();
+    g.save(); g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 8; g.fillText(title, 84, 120); g.restore();
     const dates = jobEls().map(j => txt($('.job__date', j)));
     const years = dates.join(' ').match(/\d{4}/g) || [];
     if (years.length) {
       const span = `${Math.min(...years)} — ${Math.max(...years)}`;
-      mono(g, span, 90, 420, 1400, { size: 96, color: C.accent, spacing: -2, upper: false });
+      mono(g, span, 90, 320, 1400, { size: 70, color: C.accent, spacing: -2, upper: false });
     }
-    text(g, L().pathHint, 90, 590, 1500, { size: 44, min: 30, color: C.muted, maxH: 200 });
+    text(g, L().pathHint, 90, 424, 1860, { size: 36, min: 26, color: C.muted, maxH: 60 });
   },
 
   function education(g, zones) {
@@ -368,10 +355,11 @@ const eduEls = () => $$('#experience .job').filter(isEdu);
 
 // One upright plate per job, standing along the path (logical size PLATE_W x PLATE_H)
 const PLATE_W = 1024, PLATE_H = 640;
-function paintPlate(g, j) {
+function paintPlate(g, j, n) {
   const W = PLATE_W, H = PLATE_H;
   g.save(); path(g, 8, 8, W - 16, H - 16, 20); g.fillStyle = 'rgba(8,10,20,0.92)'; g.fill(); g.lineWidth = 3; g.strokeStyle = 'rgba(124,247,212,0.4)'; g.stroke(); g.restore();
-  mono(g, txt($('.job__date', j)), 44, 36, W - 88, { size: 28, color: C.accent });
+  mono(g, txt($('.job__date', j)), 44, 36, W - 180, { size: 28, color: C.accent });
+  mono(g, String(n), W - 124, 26, 80, { size: 46, color: C.accent, align: 'right', spacing: 0 });
   text(g, txt($('h3', j)), 44, 78, W - 88, { size: 62, min: 40, weight: 500, lh: 1.05, maxH: 76, spacing: -2 });
   mono(g, txt($('.job__role', j)), 44, 162, W - 88, { size: 24, color: C.fg, upper: false, maxH: 38 });
   text(g, txt($('p:last-child', j)), 44, 214, W - 88, { size: 34, min: 22, color: C.muted, maxH: H - 240, lh: 1.26 });
@@ -480,7 +468,7 @@ const PANEL_FS = /* glsl */`
   uniform sampler2D uMap, uLive, uNum;
   uniform vec4 uLiveRect, uZone;
   uniform vec3 uRip, uColA, uColB;
-  uniform vec2 uPtr, uDot;
+  uniform vec2 uPtr;
   uniform float uTime, uReveal, uHover, uFocus, uZoneAmt, uSheen, uPhase, uLiveOn, uNumOn, uAsp;
   varying vec2 vUv; varying float vKind, vH;
   void main(){
@@ -510,7 +498,7 @@ const PANEL_FS = /* glsl */`
     if (vKind > 0.5) col += vec3(0.0012, 0.0015, 0.0026);        // cards catch a little more light than the slab
     // pointer glow, same idea as the page's service cards
     float pd = length((vUv - uPtr) * asp);
-    col += uColA * exp(-pd * pd * 26.0) * uHover * 0.07;
+    col += uColA * exp(-pd * pd * 26.0) * uHover * 0.035;
     // hovered / selected card outline
     if (uZoneAmt > 0.001) {
       vec2 c = (uZone.xy + uZone.zw) * 0.5, h = abs(uZone.zw - uZone.xy) * 0.5;
@@ -528,40 +516,36 @@ const PANEL_FS = /* glsl */`
       float d = length((vUv - uRip.xy) * asp), r = uRip.z * 1.1;
       col += uColA * exp(-pow((d - r) * 30.0, 2.0)) * (1.0 - uRip.z / 2.0) * 0.7;
     }
-    if (uLiveOn > 0.5 && uDot.x >= 0.0) {                     // heartbeat on the last price
-      float dd = length((vUv - uDot) * asp), ph = fract(uTime * 0.7);
-      col += uColA * (smoothstep(0.006, 0.003, dd) + exp(-pow((dd - ph * 0.03) * 300.0, 2.0)) * (1.0 - ph));
-    }
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }`;
 
-// BTC candles as solid bars growing out of the wall one by one
+// BTC candles: the page's slim candles and hairline wicks in its exact flat colours, with just enough thickness to stand
+// out of the wall. The face you look at is the page's colour; only the thin sides are shaded.
 const BARS_VS = /* glsl */`
   uniform float uGrow, uCount;
   attribute vec3 aBarColor;
-  varying vec3 vN, vC; varying float vG;
+  varying vec3 vC; varying float vG, vFace;
   void main(){
     float g = clamp(uGrow * (uCount + 10.0) - float(gl_InstanceID), 0.0, 1.0);
     g = 1.0 - pow(1.0 - g, 3.0);
     vG = g;
     vec3 p = position;
-    p.z *= g; p.y *= mix(0.15, 1.0, g);
+    p.y *= g; p.z *= g;
     vC = aBarColor;
-    vN = normalize(normalMatrix * mat3(instanceMatrix) * normal);
+    vFace = abs(normal.z);
     gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.0);
   }`;
 const BARS_FS = /* glsl */`
   uniform float uFocus;
-  varying vec3 vN, vC; varying float vG;
+  varying vec3 vC; varying float vG, vFace;
   void main(){
     if (vG < 0.01) discard;
-    float l = 0.3 + 0.85 * max(dot(normalize(vN), normalize(vec3(0.25, 0.55, 0.8))), 0.0);
-    gl_FragColor = vec4(vC * l * mix(0.4, 1.0, uFocus), 1.0);
+    gl_FragColor = vec4(vC * mix(0.42, 1.0, vFace) * mix(0.4, 1.0, uFocus), 1.0);
     #include <colorspace_fragment>
   }`;
 
-// Real closed trades as points of light; they appear in order after the candles
+// One point of light per closed trade; they appear in order after the candles
 const LIGHTS_VS = /* glsl */`
   uniform float uTime, uSize, uShow, uCount;
   attribute vec3 aColor; attribute float aScale, aIdx;
@@ -584,29 +568,31 @@ const LIGHTS_FS = /* glsl */`
     #include <colorspace_fragment>
   }`;
 
-// Pipeline: trains of particles arcing out of the wall, card to card
-const FLOW_VS = /* glsl */`
-  uniform float uTime, uSize, uRate;
-  uniform vec3 uA[3], uB[3], uC[3];
-  attribute float aSeed, aTrain;
-  varying float vA;
+// Career milestones: small spheres in the orb's material with their number always facing the viewer
+const MILE_VS = /* glsl */`
+  varying vec3 vN, vV, vCenter;
   void main(){
-    float t = fract(aTrain + uTime * uRate - aSeed * 0.05) * 3.0;
-    int i = int(floor(t)); if (i > 2) i = 2;
-    float f = t - float(i);
-    vec3 p = mix(mix(uA[i], uC[i], f), mix(uC[i], uB[i], f), f);
-    p += vec3(sin(aSeed * 91.0 + uTime), cos(aSeed * 47.0 + uTime * 1.3), sin(aSeed * 13.0 + uTime * 0.7)) * 0.025 * (0.3 + aSeed);
-    vec4 mv = modelViewMatrix * vec4(p, 1.0);
-    vA = 1.0 - aSeed;
-    gl_PointSize = uSize * (0.55 + (1.0 - aSeed)) / -mv.z;
+    vN = normalMatrix * normal;
+    vCenter = -(modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    vV = -mv.xyz;
     gl_Position = projectionMatrix * mv;
   }`;
-const FLOW_FS = /* glsl */`
-  uniform vec3 uColA; varying float vA;
+const MILE_FS = /* glsl */`
+  uniform sampler2D uNum;
+  uniform vec3 uColA, uColB;
+  uniform float uOn, uMirror;
+  varying vec3 vN, vV, vCenter;
   void main(){
-    float d = length(gl_PointCoord - 0.5) * 2.0;
-    gl_FragColor = vec4(mix(uColA, vec3(1.0), smoothstep(0.5, 0.0, d) * 0.6), pow(max(1.0 - d, 0.0), 1.6) * (0.25 + vA * 0.75));
-    #include <colorspace_fragment>
+    vec3 N = normalize(vN), V = normalize(vV);
+    float fres = pow(1.0 - max(dot(N, V), 0.0), 2.5);
+    vec3 L = normalize(vec3(0.35, 0.55, 0.75));
+    float diff = max(dot(N, L), 0.0);
+    vec3 col = mix(uColB, uColA, 0.5 + 0.5 * N.y) * (0.2 + diff * 0.45 + fres * 1.3) * (1.0 + uOn * 0.6);
+    col += vec3(1.0) * pow(max(dot(N, normalize(L + V)), 0.0), 70.0) * 0.55;
+    vec3 fwd = normalize(vCenter), rgt = normalize(cross(vec3(0.0, 1.0, 0.0), fwd)), upv = cross(fwd, rgt);
+    col = mix(col, vec3(1.0), texture2D(uNum, vec2(dot(N, rgt), dot(N, upv)) * 0.62 + 0.5).a);
+    gl_FragColor = vec4(uMirror > 0.5 ? pow(max(col, vec3(0.0)), vec3(2.2)) : col, 1.0);
   }`;
 
 // Mirror floor: planar reflection (the room re-rendered from below the floor), which gives the exact
@@ -624,7 +610,8 @@ const floorFS = taps => /* glsl */`
   uniform vec3 uColA, uColB;
   uniform vec3 uRings[3];
   uniform vec3 uMiles[5];
-  uniform vec2 uAxis, uPerp;
+  uniform vec2 uArcC, uAxis, uRight;
+  uniform float uArcR, uArcMax;
   uniform float uTime, uR;
   varying vec4 vClip; varying vec3 vW;
   void main(){
@@ -670,15 +657,15 @@ const floorFS = taps => /* glsl */`
     col += mix(uColB, uColA, rr) * joint * (0.018 + pulse * 0.4);
     col += refl * F;
     col += ringCol;
-    // the career path: a curved line of light with one lit milestone per job
-    float pt = dot(vW.xz, uAxis), plat = dot(vW.xz, uPerp) - sin(pt * 1.1) * 0.5;
-    float pmask = smoothstep(0.7, 1.3, pt) * (1.0 - smoothstep(7.7, 8.3, pt));
-    float pflow = pow(fract(pt * 0.35 - uTime * 0.22), 6.0);
-    col += mix(uColB, uColA, clamp(pt / 8.0, 0.0, 1.0)) * (exp(-plat * plat * 220.0) * (0.5 + pflow * 1.4) + exp(-plat * plat * 14.0) * 0.05 * (0.4 + pflow)) * pmask;
-    for (int i = 0; i < 5; i++) {
+    // the career path: an arc of light running through the milestones, oldest to newest
+    vec2 prel = vW.xz - uArcC;
+    float pang = atan(dot(prel, uRight), dot(prel, uAxis)), plat = length(prel) - uArcR;
+    float pmask = 1.0 - smoothstep(uArcMax, uArcMax + 0.03, abs(pang));
+    float pflow = pow(fract(pang / uArcMax * 1.2 - uTime * 0.22), 6.0);
+    col += mix(uColB, uColA, pang / uArcMax * 0.5 + 0.5) * (exp(-plat * plat * 260.0) * (0.5 + pflow * 1.4) + exp(-plat * plat * 16.0) * 0.05 * (0.4 + pflow)) * pmask;
+    for (int i = 0; i < 5; i++) {     // soft pool of light under each sphere
       float md = length(vW.xz - uMiles[i].xy);
-      float mr = exp(-pow((md - 0.36 - 0.05 * sin(uTime * 2.0 + float(i))) * 28.0, 2.0));
-      col += uColA * (mr * 0.75 + exp(-md * md * 60.0)) * (0.45 + uMiles[i].z * 0.9);
+      col += uColA * exp(-md * md * 9.0) * (0.05 + uMiles[i].z * 0.16);
     }
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
@@ -809,7 +796,7 @@ function drawChartLayer(g, W, H, data, status) {
   if (!data) { g.fillStyle = C.muted; g.fillText(status, W * 0.03, H / 2); return null; }
   const { candles: all, line } = data, sc = chartScale(all), plotW = sc.plotW * W, plotH = sc.plotH * H, pad = sc.pad * H, step = sc.step * W;
   const y = v => sc.y(v) * H;
-  g.strokeStyle = 'rgba(238,240,246,0.09)'; g.lineWidth = 1; g.fillStyle = C.muted;
+  g.strokeStyle = 'rgba(238,240,246,0.05)'; g.lineWidth = 1; g.fillStyle = C.muted;
   for (let i = 0; i <= 4; i++) {
     const gy = pad + i * plotH / 4;
     g.beginPath(); g.moveTo(0, gy); g.lineTo(plotW, gy); g.stroke();
@@ -1064,7 +1051,7 @@ async function buildRoom() {
   const floorUni = {
     uTime: shared.uTime, uColA: shared.uColA, uColB: shared.uColB, uR: { value: R }, uRefl: { value: reflRT.texture }, uTexMat: { value: texMat },
     uRings: { value: [new T.Vector3(0, 0, -1), new T.Vector3(0, 0, -1), new T.Vector3(0, 0, -1)] },
-    uMiles: { value: [0, 1, 2, 3, 4].map(() => new T.Vector3(0, 0, -5)) }, uAxis: { value: new T.Vector2() }, uPerp: { value: new T.Vector2() },
+    uMiles: { value: [0, 1, 2, 3, 4].map(() => new T.Vector3(0, 0, 0)) }, uAxis: { value: new T.Vector2() }, uRight: { value: new T.Vector2() }, uArcC: { value: new T.Vector2() }, uArcR: { value: 6 }, uArcMax: { value: 1 },
   };
   const floor = new T.Mesh(keep(new T.CircleGeometry(R, N)), shaderMat({ uniforms: floorUni, vertexShader: FLOOR_VS, fragmentShader: floorFS(small ? 4 : 8) }));
   floor.rotation.x = -Math.PI / 2; floor.rotation.z = Math.PI / N; scene.add(floor);
@@ -1099,7 +1086,7 @@ async function buildRoom() {
   const blank = keep(new T.DataTexture(new Uint8Array(4), 1, 1)); blank.needsUpdate = true;
   const panelUniforms = (tex, phase, asp) => ({
     uTime: shared.uTime, uColA: shared.uColA, uColB: shared.uColB,
-    uMap: { value: tex }, uLive: { value: blank }, uNum: { value: blank }, uNumOn: { value: 0 }, uLiveRect: { value: new T.Vector4() }, uLiveOn: { value: 0 }, uDot: { value: new T.Vector2(-1, -1) },
+    uMap: { value: tex }, uLive: { value: blank }, uNum: { value: blank }, uNumOn: { value: 0 }, uLiveRect: { value: new T.Vector4() }, uLiveOn: { value: 0 },
     uReveal: { value: 0 }, uHover: { value: 0 }, uFocus: { value: 0.7 }, uPhase: { value: phase }, uPtr: { value: new T.Vector2(0.5, 0.5) }, uAsp: { value: asp },
     uRip: { value: new T.Vector3(0.5, 0.5, -1) }, uZone: { value: new T.Vector4() }, uZoneAmt: { value: 0 }, uSheen: { value: 1 }, uLift: { value: new T.Vector4(-1, -1, -1, -1) }, uLiftAmt: { value: 0 },
   });
@@ -1185,10 +1172,10 @@ async function buildRoom() {
       const x = cx0 + (i + 0.5) * sc.step * cw, up = k.c >= k.o, step = sc.step * cw;
       const yT = cy0 - sc.y(Math.max(k.o, k.c)) * chh, yB = cy0 - sc.y(Math.min(k.o, k.c)) * chh;
       const yH = cy0 - sc.y(k.h) * chh, yL = cy0 - sc.y(k.l) * chh;
-      mtx.makeScale(step * 0.66, Math.max(0.012, yT - yB), 0.13).setPosition(x, (yT + yB) / 2, CHART_Z);
+      mtx.makeScale(step * 0.64, Math.max(0.004, yT - yB), 0.035).setPosition(x, (yT + yB) / 2, CHART_Z);
       bodies.setMatrixAt(i, mtx);
       const cc = up ? colUp : colDown; barColors.setXYZ(i, cc.r, cc.g, cc.b);
-      mtx.makeScale(Math.max(0.006, step * 0.13), Math.max(0.012, yH - yL), 0.07).setPosition(x, (yH + yL) / 2, CHART_Z + 0.03);
+      mtx.makeScale(Math.max(0.0045, step * 0.09), Math.max(0.004, yH - yL), 0.012).setPosition(x, (yH + yL) / 2, CHART_Z + 0.011);
       wicks.setMatrixAt(i, mtx);
     });
     [bodies, wicks].forEach(m => { m.count = all.length; m.instanceMatrix.needsUpdate = true; });
@@ -1196,16 +1183,16 @@ async function buildRoom() {
     barUni.uCount.value = all.length;
   }
 
-  // Real closed trades as points of light in front of the results panel
-  const tradePts = tradePoints(realTrades());
-  const lightUni = { uTime: shared.uTime, uSize: { value: 40 }, uShow: { value: 1 }, uCount: { value: Math.max(1, tradePts.length) } };
-  if (tradePts.length) {
-    const n = tradePts.length, lp = new Float32Array(n * 3), lc = new Float32Array(n * 3), ls = new Float32Array(n), li = new Float32Array(n);
-    const big = Math.max(...tradePts.map(p => Math.abs(p.pct)), 0.01), tmpC = new T.Color();
-    tradePts.forEach((p, i) => {
-      lp[i * 3] = (p.x / TW - 0.5) * PW; lp[i * 3 + 1] = (0.5 - p.y / TH) * PH; lp[i * 3 + 2] = 0.24;
-      tmpC.set(p.pct >= 0 ? C.up : C.down); lc[i * 3] = tmpC.r; lc[i * 3 + 1] = tmpC.g; lc[i * 3 + 2] = tmpC.b;
-      ls[i] = 0.7 + Math.abs(p.pct) / big * 0.9; li[i] = i;
+  // One point of light per closed trade, from the per-strategy counts the page already shows
+  const lightPts = tradeLights();
+  const lightUni = { uTime: shared.uTime, uSize: { value: 40 }, uShow: { value: 1 }, uCount: { value: Math.max(1, lightPts.length) } };
+  if (lightPts.length) {
+    const n = lightPts.length, lp = new Float32Array(n * 3), lc = new Float32Array(n * 3), ls = new Float32Array(n), li = new Float32Array(n);
+    const tmpC = new T.Color(C.accent);
+    lightPts.forEach((p, i) => {
+      lp[i * 3] = (p.x / TW - 0.5) * PW; lp[i * 3 + 1] = (0.5 - p.y / TH) * PH; lp[i * 3 + 2] = 0.2;
+      lc[i * 3] = tmpC.r; lc[i * 3 + 1] = tmpC.g; lc[i * 3 + 2] = tmpC.b;
+      ls[i] = 1; li[i] = i;
     });
     const lg = keep(new T.BufferGeometry());
     lg.setAttribute('position', new T.BufferAttribute(lp, 3)); lg.setAttribute('aColor', new T.BufferAttribute(lc, 3));
@@ -1216,12 +1203,8 @@ async function buildRoom() {
 
   const live = { alive: true, data: null, failed: false };
   function paintChart() {
-    const dot = drawChartLayer(chartG, chartW, chartH, live.data, live.failed ? L().down : L().wait);
+    drawChartLayer(chartG, chartW, chartH, live.data, live.failed ? L().down : L().wait);
     chartTex.needsUpdate = true;
-    if (dot) {
-      const rr = tp.uLiveRect.value;
-      tp.uDot.value.set(lerp(rr.x, rr.z, dot.x), lerp(rr.w, rr.y, dot.y));
-    } else tp.uDot.value.set(-1, -1);
   }
   let arrival = { t: 1 };   // candles, then trades, on every arrival at the Trading wall
   async function refreshChart() {
@@ -1257,66 +1240,74 @@ async function buildRoom() {
   paintTicker();
   const tickTimer = setInterval(paintTicker, 2000);
 
-  // --- pipeline: particles travelling Data -> Strategies -> Risk -> Operation, arcing out of the wall
-  const flowPanel = panels[WALL_FLOW];
-  const flowZones = flowPanel.userData.zones.filter(z => z.step != null);
-  const flowOrder = [0, 1, 3, 4].map(i => flowZones[i]).filter(Boolean);
-  const FLOW_RATE = 0.09;
-  if (flowOrder.length === 4) {
-    const P3 = z => new T.Vector3(((z.x + z.w / 2) / TW - 0.5) * PW, (0.5 - (z.y + z.h / 2) / TH) * PH, DEPTH + 0.02);
-    const pts4 = flowOrder.map(P3), As = [], Bs = [], Cs = [];
-    for (let i = 0; i < 3; i++) {
-      As.push(pts4[i]); Bs.push(pts4[i + 1]);
-      Cs.push(pts4[i].clone().add(pts4[i + 1]).multiplyScalar(0.5).setZ(0.85));
-    }
-    // faint tracks
-    const trackPts = [];
-    for (let i = 0; i < 3; i++) for (let k = 0; k < 24; k++) {
-      const q0 = k / 24, q1 = (k + 1) / 24, f3 = q => As[i].clone().lerp(Cs[i], q).lerp(Cs[i].clone().lerp(Bs[i], q), q);
-      trackPts.push(f3(q0), f3(q1));
-    }
-    const trackGeo = keep(new T.BufferGeometry().setFromPoints(trackPts));
-    const track = new T.LineSegments(trackGeo, edgeB); track.frustumCulled = false; flowPanel.add(track);
-    const nf = small ? 54 : 120, fs = new Float32Array(nf), ft = new Float32Array(nf), fp = new Float32Array(nf * 3);
-    for (let i = 0; i < nf; i++) { fs[i] = Math.pow(i % 40 / 40, 1.3); ft[i] = Math.floor(i / 40) / 3; }
-    const fg = keep(new T.BufferGeometry());
-    fg.setAttribute('position', new T.BufferAttribute(fp, 3)); fg.setAttribute('aSeed', new T.BufferAttribute(fs, 1)); fg.setAttribute('aTrain', new T.BufferAttribute(ft, 1));
-    flowPanel.userData.flowUni = { uTime: shared.uTime, uColA: shared.uColA, uSize: { value: 30 }, uRate: { value: FLOW_RATE }, uA: { value: As }, uB: { value: Bs }, uC: { value: Cs } };
-    const flow = new T.Points(fg, shaderMat({ uniforms: flowPanel.userData.flowUni, vertexShader: FLOW_VS, fragmentShader: FLOW_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
-    flow.frustumCulled = false; flowPanel.add(flow);
-  }
-
-  // --- career path on the floor: one milestone and one standing plate per job, oldest first, ending at the wall
+  // --- career: one standing plate and one numbered sphere per job, oldest first. layoutCareer() places them so that
+  // all of them can be seen at once from where the camera stands when facing this wall.
   const pa = -WALL_PATH * STEP;
-  const axis = new T.Vector2(-Math.sin(pa), -Math.cos(pa)), perp = new T.Vector2(axis.y, -axis.x);
-  floorUni.uAxis.value.copy(axis); floorUni.uPerp.value.copy(perp);
-  const pathPoint = t => axis.clone().multiplyScalar(t).add(perp.clone().multiplyScalar(Math.sin(t * 1.1) * 0.5));
+  const axis = new T.Vector2(-Math.sin(pa), -Math.cos(pa)), right = new T.Vector2(-axis.y, axis.x);
+  const viewC = axis.clone().multiplyScalar(-(AP + 4.4 - AP));   // the overview camera when facing this wall
+  floorUni.uAxis.value.copy(axis); floorUni.uRight.value.copy(right); floorUni.uArcC.value.copy(viewC);
   const jobs = jobEls().slice(0, 5).reverse();
-  const PLATE = { w: 2.56, h: 1.6, y: 1.72 };
-  const plates = [];
+  const PLATE = { w: 2.56, h: 1.6 };
+  const plates = [], spheres = [];
   const plateProxy = keep(new T.PlaneGeometry(PLATE.w, PLATE.h));
   const plateGeo = keep(slabGeometry(T, PLATE.w, PLATE.h, PLATE_W, PLATE_H, [], 0.14, 8, 5));
-  const beamGeo = keep(new T.CylinderGeometry(0.012, 0.012, 1, 6));
+  const sphereGeo = keep(new T.SphereGeometry(0.24, 32, 24));
   jobs.forEach((j, i) => {
-    const t = 1.7 + i * (5.2 / Math.max(1, jobs.length - 1)), sideSign = i % 2 ? 1 : -1, at = pathPoint(t);
-    floorUni.uMiles.value[i].set(at.x, at.y, 0);
     const c = el('canvas'); c.width = PLATE_W; c.height = PLATE_H;
     const g = c.getContext('2d');
-    try { paintPlate(g, j); } catch (e) { console.error('VR plate', i, e); }
+    try { paintPlate(g, j, i + 1); } catch (e) { console.error('VR plate', i, e); }
     const tex = keep(new T.CanvasTexture(c)); tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = maxAniso;
     const u = panelUniforms(tex, i * 2.1, PLATE.w / PLATE.h);
     const mesh = new T.Mesh(plateGeo, panelMat(u));
-    const px = at.x + perp.x * sideSign * 1.85, pz = at.y + perp.y * sideSign * 1.85;
-    // turned toward the path and back toward the centre of the room
-    const nx = -axis.x * 0.86 - perp.x * sideSign * 0.5, nz = -axis.y * 0.86 - perp.y * sideSign * 0.5;
-    const yawP = Math.atan2(nx, nz);
-    mesh.position.set(px, PLATE.y, pz); mesh.rotation.y = yawP; mesh.frustumCulled = false;
-    mesh.userData = { plate: i, u, rise: 0, x: px, z: pz, yaw: yawP, nx, nz, zones: [], milestone: at };
+    mesh.frustumCulled = false;
+    mesh.userData = { plate: i, u, rise: 0, x: 0, y: 1.72, z: 0, k: 1, yaw: 0, nx: 0, nz: 1, zones: [], milestone: new T.Vector2() };
     const proxy = new T.Mesh(plateProxy); proxy.visible = false; proxy.userData.panel = mesh; mesh.add(proxy);
-    const beam = new T.Mesh(beamGeo, edgeA); beam.scale.set(1, PLATE.y - PLATE.h / 2, 1); beam.position.set(0, -PLATE.h / 2 - (PLATE.y - PLATE.h / 2) / 2, 0); mesh.add(beam);
     scene.add(mesh); plates.push(mesh);
     renderer.initTexture(tex);
+    const nc = el('canvas'); nc.width = nc.height = 128;
+    const ng = nc.getContext('2d'); ng.font = `500 92px ${SANS}`; ng.textAlign = 'center'; ng.textBaseline = 'middle'; ng.fillStyle = '#fff'; ng.fillText(String(i + 1), 64, 68);
+    const nt = keep(new T.CanvasTexture(nc));
+    const ball = new T.Mesh(sphereGeo, shaderMat({ uniforms: { uNum: { value: nt }, uColA: shared.uColA, uColB: shared.uColB, uOn: { value: 0 }, uMirror: orbUniforms.uMirror }, vertexShader: MILE_VS, fragmentShader: MILE_FS }));
+    ball.userData.phase = i * 1.3;
+    scene.add(ball); spheres.push(ball);
   });
+  function layoutCareer() {
+    const { w, h } = size(), asp = w / h;
+    const vfov = rad(asp < 1 ? 78 : 74), half = Math.atan(Math.tan(vfov / 2) * asp) * 180 / Math.PI;
+    const put = (p, x, z, y, k = 1) => {
+      p.userData.k = k; p.scale.set(k, k, 1);
+      const m = p.userData, dx = viewC.x - x, dz = viewC.y - z, l = Math.hypot(dx, dz);
+      m.x = x; m.z = z; m.y = y; m.nx = dx / l; m.nz = dz / l; m.yaw = Math.atan2(m.nx, m.nz);
+      p.position.x = x; p.position.z = z; p.rotation.y = m.yaw;
+    };
+    let stepA, arcR;
+    if (half - 10 >= 40) {
+      // wide screens: a fan, every plate side by side at the same distance from the viewer
+      stepA = rad(Math.min(23, (half - 10) / 2)); arcR = 6.4;
+      const D = 7.4;
+      plates.forEach((p, i) => {
+        const a = (i - (plates.length - 1) / 2) * stepA;
+        put(p, viewC.x + (axis.x * Math.cos(a) + right.x * Math.sin(a)) * D, viewC.y + (axis.y * Math.cos(a) + right.y * Math.sin(a)) * D, 1.72);
+      });
+    } else {
+      // narrow screens: rows of two, oldest at the top, so nothing hides behind anything else
+      stepA = rad(Math.max(5, (half - 3) / 2.2)); arcR = 5.6;
+      const D = 8, K = 0.85, rows = [[0, 3.8], [0, 2.38], [0, 0.96]];
+      plates.forEach((p, i) => {
+        const row = Math.floor(i / 2), last = i === plates.length - 1 && i % 2 === 0;
+        const lat = last ? 0 : (i % 2 ? 1.16 : -1.16), y = rows[row][1];
+        put(p, viewC.x + axis.x * D + right.x * lat, viewC.y + axis.y * D + right.y * lat, y, K);
+      });
+    }
+    spheres.forEach((b, i) => {
+      const a = (i - (spheres.length - 1) / 2) * stepA;
+      const x = viewC.x + (axis.x * Math.cos(a) + right.x * Math.sin(a)) * arcR, z = viewC.y + (axis.y * Math.cos(a) + right.y * Math.sin(a)) * arcR;
+      b.position.x = x; b.position.z = z; b.userData.base = 0.42;
+      plates[i].userData.milestone.set(x, z);
+      floorUni.uMiles.value[i].x = x; floorUni.uMiles.value[i].y = z;
+    });
+    floorUni.uArcR.value = arcR; floorUni.uArcMax.value = stepA * (spheres.length - 1) / 2 + 0.1;
+  }
   setLoad((N + 1) / (N + 2));
 
   // --- view state: overview of the room -> one wall -> one card
@@ -1353,8 +1344,8 @@ async function buildRoom() {
       s.tPanY = (0.5 - (z.y + z.h / 2) / TH) * PH;
     }
     else if (s.mode === 'plate') {
-      const m = plates[s.plate].userData, f = frameDist(PLATE.w, PLATE.h, 0.94, 0.72);
-      s.tDist = AP; s.tFov = f.fov; s.tPitch = 0; s.tPanX = 0; s.tPanY = PLATE.y - EYE;
+      const m = plates[s.plate].userData, f = frameDist(PLATE.w * m.k, PLATE.h * m.k, 0.94, 0.72);
+      s.tDist = AP; s.tFov = f.fov; s.tPitch = 0; s.tPanX = 0; s.tPanY = m.y - EYE;
       s.tYaw += shortest(m.yaw - s.tYaw);
       const nl = Math.hypot(m.nx, m.nz);
       s.tWalkX = m.x + m.nx / nl * f.dist; s.tWalkZ = m.z + m.nz / nl * f.dist;
@@ -1434,16 +1425,16 @@ async function buildRoom() {
     const rh = Math.min(T0.refl, h * pr), rw = Math.round(rh * w / h);
     reflRT.setSize(rw, Math.round(rh));
     pUni.uSize.value = 30 * pr; pUni.uMax.value = 7 * pr;
-    lightUni.uSize.value = 150 * pr;
-    if (flowPanel.userData.flowUni) flowPanel.userData.flowUni.uSize.value = 48 * pr;
+    lightUni.uSize.value = 110 * pr;
     pgeo.setDrawRange(0, Math.floor(PCOUNT * T0.pts));
   }
-  const ro = new ResizeObserver(() => { applySize(); applyMode(); });
+  const ro = new ResizeObserver(() => { applySize(); layoutCareer(); applyMode(); });
   ro.observe(ui);
   applySize();
+  layoutCareer();
 
   // --- picking
-  const ray = new T.Raycaster(), v2 = new T.Vector2(), orbCenter = new T.Vector3(), orbHit = new T.Vector3();
+  const ray = new T.Raycaster(), v2 = new T.Vector2(), orbCenter = new T.Vector3(), orbHit = new T.Vector3(), _sph = new T.Sphere(), _mid = new T.Vector2(0.5, 0.5);
   function pick(cx, cy) {
     const { w, h } = size();
     v2.set(cx / w * 2 - 1, -(cy / h) * 2 + 1);
@@ -1453,6 +1444,10 @@ async function buildRoom() {
     orb.getWorldPosition(orbCenter);
     const oh = ray.ray.intersectSphere(_t.copy(orbCenter) && new T.Sphere(orbCenter, ORB_R * orb.scale.x * 1.2), orbHit);
     if (oh && (!hit || oh.distanceTo(ray.ray.origin) < hit.distance)) return { orb: true };
+    for (let i = 0; i < spheres.length; i++) {
+      const b = ray.ray.intersectSphere(_sph.set(spheres[i].position, 0.34), orbHit);
+      if (b && (!hit || b.distanceTo(ray.ray.origin) < hit.distance)) return { panel: plates[i], plate: i, uv: _mid };
+    }
     let point = null;
     if (ray.ray.direction.y < 0) { const k = -ray.ray.origin.y / ray.ray.direction.y; point = ray.ray.origin.clone().addScaledVector(ray.ray.direction, k); }
     if (!hit || !hit.uv) return { floor: point };
@@ -1479,6 +1474,8 @@ async function buildRoom() {
   const cursorEl = $('#cursor'), cursorLabel = $('#cursorLabel');
   const setCursor = (active, label) => { if (cursorEl) { cursorEl.classList.toggle('is-hover', active); if (cursorLabel) cursorLabel.textContent = label || ''; } };
   const ptrs = new Map();
+  const DOUBLE_MS = 280;
+  let pendingTap = null;
   let moved = 0, downAt = 0, pinch0 = 0, dist0 = 0, hoverDirty = false, hx = 0, hy = 0, hoverPanel = null, hoverZone = null, lastMoveT = 0, dragging = false;
   const pdist = () => { const [a, b] = [...ptrs.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
   function touchWake() { s.lastInput = performance.now(); }
@@ -1541,7 +1538,16 @@ async function buildRoom() {
       } else if (s.mode === 'over' && !stale) s.tYaw += clamp(s.vel, -3, 3) * 0.1;  // glide
       dragging = false; return;
     }
-    if (e.type === 'pointerup' && moved < 8 && performance.now() - downAt < 600) tap(e.clientX, e.clientY);
+    if (e.type === 'pointerup' && moved < 8 && performance.now() - downAt < 600) {
+      const tx = e.clientX, ty = e.clientY;
+      if (pendingTap && Math.hypot(tx - pendingTap.x, ty - pendingTap.y) < 48) {
+        clearTimeout(pendingTap.timer); pendingTap = null;
+        stepOut();                                 // double click / double tap = the Back button
+        return;
+      }
+      if (pendingTap) { clearTimeout(pendingTap.timer); tap(pendingTap.x, pendingTap.y); }
+      pendingTap = { x: tx, y: ty, timer: setTimeout(() => { const t = pendingTap; pendingTap = null; if (t) tap(t.x, t.y); }, DOUBLE_MS) };
+    }
   };
   on(cv, 'pointerup', up); on(cv, 'pointercancel', up);
   on(cv, 'wheel', e => {
@@ -1728,13 +1734,7 @@ async function buildRoom() {
       u.uHover.value = smooth(u.uHover.value, isHover ? 1 : 0, dt, 7);
       const sel = s.mode === 'zone' && s.zone && s.zoneWall === i;
       if (isHover && hoverZone) zoneUv(u, hoverZone); else if (sel) zoneUv(u, s.zone);
-      let pulse = false;
-      if (i === WALL_FLOW && flowOrder.length === 4 && !(isHover && hoverZone) && !sel && s.wall === WALL_FLOW) {
-        // the card the particles are arriving at lights up
-        const st3 = Math.floor(((time * FLOW_RATE) % 1) * 3) + 1;
-        zoneUv(u, flowOrder[Math.min(3, st3)]); pulse = true;
-      }
-      u.uZoneAmt.value = smooth(u.uZoneAmt.value, (isHover && hoverZone) || sel || pulse ? 1 : 0, dt, 9);
+      u.uZoneAmt.value = smooth(u.uZoneAmt.value, (isHover && hoverZone) || sel ? 1 : 0, dt, 9);
       const lifted = isHover && hoverZone && hoverZone.d && !hoverZone.noLift ? hoverZone : sel && s.zone.d && !s.zone.noLift ? s.zone : null;
       if (lifted) u.uLift.value.set(lifted.x / TW, 1 - (lifted.y + lifted.h) / TH, (lifted.x + lifted.w) / TW, 1 - lifted.y / TH);
       u.uLiftAmt.value = smooth(u.uLiftAmt.value, lifted ? 1 : 0, dt, 9);
@@ -1751,13 +1751,18 @@ async function buildRoom() {
       const m = p.userData, u = m.u;
       const want = s.mode === 'plate' ? (s.plate === i ? 1 : 0) : (facingPath && (s.mode === 'over') ? 1 : 0);
       m.rise = reduceMotion ? want : smooth(m.rise, want, dt, 3.2 - i * 0.25);
-      p.position.y = PLATE.y - (1 - m.rise) * (PLATE.y + PLATE.h / 2 + 0.2);
+      p.position.y = m.y - (1 - m.rise) * (m.y + PLATE.h * m.k / 2 + 0.2);
       p.visible = m.rise > 0.01;
       u.uReveal.value = 1; u.uFocus.value = 1;
       u.uHover.value = smooth(u.uHover.value, hoverPanel === p ? 1 : 0, dt, 7);
       if (u.uSheen.value < 1) u.uSheen.value = Math.min(1, u.uSheen.value + dt / 1.1);
       if (u.uRip.value.z >= 0) { u.uRip.value.z += dt; if (u.uRip.value.z > 2) u.uRip.value.z = -1; }
-      floorUni.uMiles.value[i].z = s.plate === i ? 1 : hoverPanel === p ? 0.7 : 0;
+      const lit = s.plate === i ? 1 : hoverPanel === p ? 0.7 : 0;
+      floorUni.uMiles.value[i].z = lit;
+      const ball = spheres[i], bu = ball.material.uniforms.uOn;
+      bu.value = smooth(bu.value, lit, dt, 8);
+      ball.position.y = ball.userData.base + Math.sin(time * 1.1 + ball.userData.phase) * 0.05;
+      ball.scale.setScalar(1 + bu.value * 0.18);
     });
     floorUni.uRings.value.forEach(r => { if (r.z >= 0) { r.z += dt; if (r.z > 2.6) r.z = -1; } });
 
@@ -1792,7 +1797,7 @@ async function buildRoom() {
 
   function dispose() {
     live.alive = false;
-    clearInterval(chartTimer); clearInterval(tickTimer); clearTimeout(hintTimer); clearTimeout(walkHintTimer);
+    clearInterval(chartTimer); clearInterval(tickTimer); clearTimeout(hintTimer); clearTimeout(walkHintTimer); if (pendingTap) clearTimeout(pendingTap.timer);
     ro.disconnect();
     renderer.setAnimationLoop(null);
     setCursor(false, '');
