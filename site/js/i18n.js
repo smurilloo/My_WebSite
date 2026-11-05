@@ -38,6 +38,8 @@ window.I18N_EN = {
   'trading.title': 'Tradester',
   'trading.intro': 'Case study: my own trading bot for BTC/USDT perpetual futures on Bitget, running three strategies 24/7 on a Raspberry Pi and monitored by an AI agent that sends a Telegram alert on any error.',
   'st.pf': 'Out-of-sample profit factor 2026 (all 3 strategies)',
+  'st.oost': 'Out-of-sample trades 2026 (all 3 strategies)',
+  'st.oosw': 'Out-of-sample win rate 2026 (all 3 strategies)',
   'st.net': 'Out-of-sample net return 2026 (all 3 strategies)',
   'st.trades': 'Total trades (all 3 strategies, all periods)',
   'sx.s1': 'Reversals at extremes',

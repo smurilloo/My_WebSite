@@ -197,9 +197,9 @@ const WALLS = [
     mono(g, txt($('.chart__head span')), cx + 24, cy + 18, 640, { size: 19, color: C.muted });
     mono(g, 'LIVE', cx + cw - 24 - 120, cy + 18, 120, { size: 19, color: C.up, align: 'right' });
     zones.push({ x: cx, y: cy, w: cw, h: chh });
-    const sw = 455, sh = 242;
-    $$('#trading .stat').slice(0, 4).forEach((s, i) => {
-      const x = cx + (i % 2) * (sw + 20), y = cy + chh + 18 + Math.floor(i / 2) * (sh + 16);
+    const sw = 296, sh = 242;
+    $$('#trading .stat').slice(0, 6).forEach((s, i) => {
+      const x = cx + (i % 3) * (sw + 21), y = cy + chh + 18 + Math.floor(i / 3) * (sh + 16);
       glass(g, x, y, sw, sh);
       counter(count, $('b', s), x + 24, y + 24, sw - 48, 70, { size: 58, color: C.accent, spacing: -2, upper: false });
       text(g, txt($('span', s)), x + 24, y + 104, sw - 48, { size: 22, min: 16, color: C.muted, maxH: sh - 116 });
