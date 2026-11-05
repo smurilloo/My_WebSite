@@ -55,6 +55,8 @@ const coreUniforms = {
   uColA: { value: new THREE.Color('#7cf7d4') },
   uColB: { value: new THREE.Color('#8b7cff') },
   uMouse: { value: new THREE.Vector2() },
+  uOpacity: { value: 1 },
+  uBg: { value: new THREE.Color(0x05060a) },
 };
 
 const coreMat = new THREE.ShaderMaterial({
@@ -79,8 +81,8 @@ const coreMat = new THREE.ShaderMaterial({
       gl_Position = projectionMatrix * mv;
     }`,
   fragmentShader: /* glsl */`
-    uniform vec3 uColA, uColB;
-    uniform float uTime;
+    uniform vec3 uColA, uColB, uBg;
+    uniform float uTime, uOpacity;
     varying float vDisp;
     varying vec3 vNormal;
     varying vec3 vView;
@@ -89,7 +91,9 @@ const coreMat = new THREE.ShaderMaterial({
       vec3 col = mix(uColB, uColA, smoothstep(-0.3, 0.45, vDisp));
       col = col * (0.18 + fres * 1.4);
       float bands = smoothstep(0.92, 1.0, sin(vDisp * 40.0 + uTime) * 0.5 + 0.5) * 0.25;
-      gl_FragColor = vec4(col + bands * uColA, 1.0);
+      // Faded towards the page colour instead of with alpha: the spikes fold over themselves
+      // and alpha layers would pile up. Only the front surface shows, so it fades evenly.
+      gl_FragColor = vec4(mix(uBg, col + bands * uColA, uOpacity), 1.0);
     }`,
   wireframe: false,
 });
@@ -126,6 +130,7 @@ const pUniforms = {
   uSize: { value: 22 * renderer.getPixelRatio() },
   uCol: { value: new THREE.Color('#7cf7d4') },
   uFlow: { value: 0 },
+  uOpacity: { value: 1 },
 };
 const particles = new THREE.Points(pGeo, new THREE.ShaderMaterial({
   uniforms: pUniforms,
@@ -151,11 +156,12 @@ const particles = new THREE.Points(pGeo, new THREE.ShaderMaterial({
     }`,
   fragmentShader: /* glsl */`
     uniform vec3 uCol;
+    uniform float uOpacity;
     varying float vA;
     void main(){
       float d = length(gl_PointCoord - 0.5);
       float a = smoothstep(0.5, 0.0, d);
-      gl_FragColor = vec4(uCol, a * vA * 0.7);
+      gl_FragColor = vec4(uCol, a * vA * 0.7 * uOpacity);
     }`,
 }));
 scene.add(particles);
@@ -207,6 +213,43 @@ window.addEventListener('resize', resize);
 resize();
 
 const lerp = (a, b, t) => a + (b - a) * t;
+
+// ---------- Fade behind text ----------
+// Text with no blurred panel of its own. Measured on screen, not per section, so it
+// follows the real layout in either language and at any viewport width.
+const BARE_TEXT = [
+  '.section__title', '.section__intro', '.section__idx', '.eyebrow',
+  '.stat', '.strat', '.real__head', '.backtest-date', '.step', '.disclaimer',
+  '.job', '.marquee__row', '.contact__big', '.contact__links', '.footer',
+].map(sel => `.section ${sel}`).join(', ');
+const bareText = [...document.querySelectorAll(BARE_TEXT)];
+const textRange = document.createRange();
+const FADED = 0.16, FADED_PARTICLES = 0.5;
+const CORE_RADIUS = 1.6, FADE_DEPTH = 0.3; // fully faded once text is this far (× radius) inside the orb
+const centre = new THREE.Vector3();
+let fade = 0, fadeTarget = 0, fadeCheck = 0;
+
+// How deep a rectangle reaches into the circle: 0 = outside, 1 = at the centre
+function reach(r, cx, cy, radius) {
+  const dx = cx - Math.max(r.left, Math.min(cx, r.right));
+  const dy = cy - Math.max(r.top, Math.min(cy, r.bottom));
+  return Math.max(0, 1 - Math.hypot(dx, dy) / radius);
+}
+
+function measureFade() {
+  centre.copy(core.position).project(camera);
+  const w = window.innerWidth, h = window.innerHeight;
+  const cx = (centre.x + 1) / 2 * w, cy = (1 - centre.y) / 2 * h;
+  const dist = camera.position.distanceTo(core.position);
+  const radius = CORE_RADIUS * cur.s / (dist * Math.tan(camera.fov * Math.PI / 360)) * h / 2;
+  let deepest = 0;
+  for (const el of bareText) {
+    if (!reach(el.getBoundingClientRect(), cx, cy, radius)) continue; // cheap box test first
+    textRange.selectNodeContents(el); // the text itself, block boxes span empty space
+    deepest = Math.max(deepest, reach(textRange.getBoundingClientRect(), cx, cy, radius));
+  }
+  return Math.min(deepest / FADE_DEPTH, 1);
+}
 const clock = new THREE.Clock();
 let scrollVel = 0, lastY = window.scrollY;
 
@@ -246,6 +289,13 @@ function tick() {
   shell.scale.setScalar(cur.s * (1 + Math.sin(t * 0.6) * 0.03));
   shell.rotation.y -= dt * 0.05;
   shell.rotation.z += dt * 0.03;
+
+  fadeCheck -= dt;
+  if (fadeCheck <= 0) { fadeTarget = measureFade(); fadeCheck = 0.1; }
+  fade = lerp(fade, fadeTarget, 1 - Math.pow(0.002, dt));
+  coreUniforms.uOpacity.value = lerp(1, FADED, fade);
+  pUniforms.uOpacity.value = lerp(1, FADED_PARTICLES, fade);
+  shell.material.opacity = lerp(0.08, 0.03, fade);
 
   coreUniforms.uTime.value = t;
   coreUniforms.uAmp.value = cur.amp + Math.min(Math.abs(scrollVel) * 0.004, 0.25);
