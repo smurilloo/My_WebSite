@@ -215,12 +215,12 @@ resize();
 const lerp = (a, b, t) => a + (b - a) * t;
 
 // ---------- Fade behind text ----------
-// Text with no blurred panel of its own. Measured on screen, not per section, so it
-// follows the real layout in either language and at any viewport width.
+// Content text with no blurred panel of its own. Measured on screen, not per section, so
+// it follows the real layout in either language and at any viewport width. Titles and the
+// contact section are left out on purpose: the orb stays whole behind them.
 const BARE_TEXT = [
-  '.section__title', '.section__intro', '.section__idx', '.eyebrow',
-  '.stat', '.strat', '.real__head', '.backtest-date', '.step', '.disclaimer',
-  '.job', '.marquee__row', '.contact__big', '.contact__links', '.footer',
+  '.section__intro', '.stat', '.strat', '.real__head', '.backtest-date', '.step', '.disclaimer',
+  '.job', '.marquee__row',
 ].map(sel => `.section ${sel}`).join(', ');
 const bareText = [...document.querySelectorAll(BARE_TEXT)];
 const textRange = document.createRange();
@@ -248,7 +248,16 @@ function measureFade() {
     textRange.selectNodeContents(el); // the text itself, block boxes span empty space
     deepest = Math.max(deepest, reach(textRange.getBoundingClientRect(), cx, cy, radius));
   }
-  return Math.min(deepest / FADE_DEPTH, 1);
+  return Math.min(deepest / FADE_DEPTH, 1) * (1 - titleHold(h));
+}
+
+// 1 while the current section's title is on screen, so each section opens with the whole orb.
+// Only once the title has climbed the screen: until then the previous section's text is still there.
+function titleHold(h) {
+  const title = sections[sectionBlend().i].querySelector('.section__title');
+  if (!title) return 0;
+  const r = title.getBoundingClientRect();
+  return r.top < h * 0.4 ? Math.max(0, Math.min(r.bottom / (h * 0.15), 1)) : 0;
 }
 const clock = new THREE.Clock();
 let scrollVel = 0, lastY = window.scrollY;
