@@ -23,6 +23,7 @@ START, END = "<!-- live:start -->", "<!-- live:end -->"
 # Spanish lives in the markup; English comes from the same data-i18n keys in site/js/i18n.js.
 NAMES = {
     "S1": ("sx.s1", "Giros en extremos"),
+    "S2": ("sx.s2", "Volume Profile"),
     "S4": ("sx.s4", "Rupturas con impulso"),
 }
 
@@ -32,14 +33,15 @@ def epoch(ts):
 
 
 def load_trades(db_path, cfg):
-    since = epoch(cfg["since"] + " 00:00:00")
+    overrides = cfg.get("since_by_strategy", {})
+    since = {s: epoch(overrides.get(s, cfg["since"]) + " 00:00:00") for s in cfg["strategies"]}
     con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     rows = con.execute(
         "SELECT strategy, exit_ts_utc, net_pnl_pct_account FROM trades "
         "WHERE status = 'CLOSED' AND exit_ts_utc IS NOT NULL AND net_pnl_pct_account IS NOT NULL"
     ).fetchall()
     con.close()
-    return [(s, epoch(ts), float(pct)) for s, ts, pct in rows if s in cfg["strategies"] and epoch(ts) >= since]
+    return [(s, epoch(ts), float(pct)) for s, ts, pct in rows if s in since and epoch(ts) >= since[s]]
 
 
 
@@ -49,7 +51,7 @@ def card(label, name_key, name, pct, meta, label_key=None):
         '          <div class="strat reveal">\n'
         f'            <span class="strat__id mono"{lab}>{label}</span>\n'
         f'            <h4 data-i18n="{name_key}">{name}</h4>\n'
-        f'            <b class="mono" data-count="{abs(pct):.2f}" data-dec="2" data-prefix="{"+" if pct >= 0 else "−"}" '
+        f'            <b class="mono" data-count="{abs(pct):.2f}" data-dec="2" data-prefix="{"+" if round(pct, 2) > 0 else "−" if round(pct, 2) < 0 else ""}" '
         f'data-suffix="%">0</b><span class="strat__unit mono" data-i18n="rl.net">neto de comisiones</span>\n'
         f'            <p class="strat__meta mono">{meta}</p>\n'
         "          </div>\n"
@@ -62,7 +64,7 @@ def n_trades(n):
 
 def render(trades, cfg):
     trades = sorted(trades, key=lambda t: t[1])
-    by = {}
+    by = {name: [] for name in cfg["strategies"].values()}   # a strategy with no closed trades still shows, at zero
     for s, _, pct in trades:
         by.setdefault(cfg["strategies"].get(s, s), []).append(pct)
     order = sorted(by)
@@ -84,7 +86,7 @@ def render(trades, cfg):
     html.append(
         '        <p class="backtest-date mono reveal" data-i18n="rl.note">Suma de la rentabilidad neta de cada trade, '
         "en % de la cuenta al abrirlo, neta de comisiones y funding según Bitget. Se actualiza automáticamente "
-        "con cada trade cerrado; las posiciones abiertas no se incluyen.</p>\n"
+        "con cada trade cerrado; las posiciones abiertas no se incluyen. S2 cuenta desde el 2026-11-04.</p>\n"
     )
     return "".join(html)
 

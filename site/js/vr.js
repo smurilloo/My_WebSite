@@ -142,7 +142,7 @@ function frame(g) { // outer wall panel; its rim of light is drawn by the panel 
 const CARD = { w: 620, h: 450, gx: 30, gy: 22, x: 64, y: 290 };
 const DEPTH = 0.14;
 const cell = i => ({ x: CARD.x + (i % 3) * (CARD.w + CARD.gx), y: CARD.y + Math.floor(i / 3) * (CARD.h + CARD.gy), w: CARD.w, h: CARD.h });
-const REAL = { x: 1040, y: 300, w: 938, h: 910 }, REAL_ROW = 200;
+const REAL = { x: 1040, y: 300, w: 938, h: 910 }, REAL_ROW = 150;
 
 // One point of light per closed trade, built only from the per-strategy counts the page already shows
 function tradeLights() {
@@ -230,8 +230,8 @@ const WALLS = [
 
   function strategies(g, zones, count) {
     heading(g, '02', L().strategies, txt($('#trading > .backtest-date')), zones);
-    const cw = 945, ch = 900, gx = 30, x0 = 64, y0 = 290;
-    $$('#trading > .strats > .strat').slice(0, 2).forEach((s, i) => {
+    const cw = 620, ch = 900, gx = 30, x0 = 64, y0 = 290;
+    $$('#trading > .strats > .strat').slice(0, 3).forEach((s, i) => {
       const x = x0 + i * (cw + gx);
       glass(g, x, y0, cw, ch);
       mono(g, txt($('.strat__id', s)), x + 30, y0 + 26, 100, { size: 26, color: C.a2 });

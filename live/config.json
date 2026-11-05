@@ -2,6 +2,10 @@
   "since": "2026-10-15",
   "strategies": {
     "strategy_1": "S1",
+    "strategy_2": "S2",
     "strategy_4": "S4"
+  },
+  "since_by_strategy": {
+    "strategy_2": "2026-11-04"
   }
 }
