@@ -61,7 +61,7 @@ window.I18N_EN = {
   'p1.t': 'Data',
   'p1.d': 'Live, every 30 s cycle the bot reads 15m, 1H, 4H and 1D candles from Bitget plus the order book (20 levels), and logs it all for backtesting on real data; history goes back to 2018. 1m candles are logged too, but only for research: they play no part in any decision.',
   'p2.t': 'Three strategies',
-  'p2.d': 'Three independent strategies running in parallel, each with its own size, stop and management; only fully confirmed signals are traded. S4 detects on 15m and S1 on 1H; both confirm on 1H with the order book, use 4H as the higher timeframe and the daily (1D) regime in their quality filter. They also classify each signal by market setup type, with regime segments computed from 1H and 15m candles, and use their own parameters for each type. S2 uses a volume profile built from closed 4H candles: it pre-confirms on 1H and confirms on 15m. Entry criteria are confidential.',
+  'p2.d': 'Three independent strategies running in parallel, each with its own size, stop and management, and one open trade at a time; only fully confirmed signals are traded. S4 detects on 15m and S1 on 1H; both confirm on 1H with the order book, use 4H as the higher timeframe and the daily (1D) regime in their quality filter. They also classify each signal by market setup type, with regime segments computed from 1H and 15m candles, and use their own parameters for each type. S2 uses a volume profile built from closed 4H candles: it pre-confirms on 1H and confirms on 15m. Entry criteria are confidential.',
   'p3.t': 'GPU optimization',
   'p3.d': 'Numba/CUDA engine on an RTX 4060: walk-forward analysis, bootstrapping, Monte Carlo simulation and parameter-neighborhood tests.',
   'p4.t': 'Risk',
